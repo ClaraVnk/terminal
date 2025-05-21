@@ -3,7 +3,7 @@
 
 set -e
 
-### INSTALLATION DE HOMEBREW SI ABSENT (normalement déjà installé, mais garde la logique)
+### INSTALLATION DE HOMEBREW SI ABSENT
 if ! command -v brew &>/dev/null; then
   echo "🔧 Installation de Homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -81,6 +81,10 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   if [[ $- == *i* ]]; then
     eval "$(atuin init zsh)"
   fi
+  if ! grep -q 'atuin init zsh' ~/.zshrc; then
+    echo 'eval "$(atuin init zsh)"' >> ~/.zshrc
+    echo "✅ Initialisation Atuin ajoutée à ~/.zshrc"
+  fi
 
   ### FZF : https://github.com/junegunn/fzf
   if ! brew list fzf &>/dev/null; then
@@ -90,7 +94,13 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
     # Optionnel : installer les fichiers de configuration fzf
     $(brew --prefix)/opt/fzf/install --all --no-bash --no-fish
   fi
-  [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+  if [ -f ~/.fzf.zsh ]; then
+    source ~/.fzf.zsh
+  fi
+  if [ -f ~/.fzf.zsh ] && ! grep -q 'source ~/.fzf.zsh' ~/.zshrc; then
+    echo 'source ~/.fzf.zsh' >> ~/.zshrc
+    echo "✅ Initialisation fzf ajoutée à ~/.zshrc"
+  fi
 
   ### INSTALLATION DE PINENTRY-MAC & GNUPG
   if command -v brew &>/dev/null; then
@@ -112,12 +122,24 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
   gpgconf --launch gpg-agent
 
+  if ! grep -q 'GPG_TTY=' ~/.zshrc; then
+    echo '# YubiKey + GPG config' >> ~/.zshrc
+    echo 'export GPG_TTY="$(tty)"' >> ~/.zshrc
+    echo 'export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)' >> ~/.zshrc
+    echo 'gpgconf --launch gpg-agent' >> ~/.zshrc
+    echo "✅ Configuration GPG/YubiKey ajoutée à ~/.zshrc"
+  fi
+
   ### DIRENV : https://direnv.net/
   eval "$(direnv hook zsh)"
+  if ! grep -q 'eval "$(direnv hook zsh)"' ~/.zshrc; then
+    echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
+    echo "✅ Initialisation Direnv ajoutée à ~/.zshrc"
+  fi
   if ! brew list direnv &>/dev/null; then
-      echo "🔧 Installation de direnv..."
-      brew install direnv
-      echo "✅ direnv installé avec succès."
+    echo "🔧 Installation de direnv..."
+    brew install direnv
+    echo "✅ direnv installé avec succès."
   fi
 
   ### EXA : https://the.exa.website/
@@ -125,6 +147,19 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
     echo "🔧 Installation de exa..."
     brew install exa
     echo "✅ exa installé avec succès."
+  fi
+
+  # Ajout des alias exa dans ~/.zshrc uniquement s'ils sont absents
+  if ! grep -q 'alias ls=' ~/.zshrc; then
+    echo '# Alias exa' >> ~/.zshrc
+    echo 'alias ls="exa -a --icons"' >> ~/.zshrc
+    echo 'alias ll="exa -1a --icons"' >> ~/.zshrc
+    echo 'alias ld="ll"' >> ~/.zshrc
+    echo 'alias la="exa -lagh --icons"' >> ~/.zshrc
+    echo 'alias lt="exa -a --tree --icons --level=2"' >> ~/.zshrc
+    echo 'alias ltf="exa -a --tree --icons"' >> ~/.zshrc
+    echo 'alias lat="exa -lagh --tree --icons"' >> ~/.zshrc
+    echo "✅ Alias exa ajoutés à ~/.zshrc"
   fi
 
   alias ls="exa -a --icons"                   # short, multi-line
