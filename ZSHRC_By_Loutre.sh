@@ -184,4 +184,5 @@ else
   echo "⚠️ Installation du script publish_py annulée."
 fi
 
-echo "✅ Configuration de l'environnement terminée."
+echo "🎉 Configuration de l'environnement terminée."
+fi
