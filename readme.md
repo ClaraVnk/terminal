@@ -5,20 +5,22 @@
 Fait avec amour ❤️
 
 Ce dépôt contient un script d’installation complet et automatisé pour configurer un environnement Zsh moderne et puissant sur macOS, avec :
-	•	Gestionnaire de paquets Homebrew
-	•	Terminal iTerm2 (avec thème Dracula conseillé)
-	•	Framework Oh My Zsh
-	•	Prompt visuel Powerlevel10k
-	•	Plugins Zsh essentiels : zsh-autocomplete, zsh-autosuggestions, zsh-syntax-highlighting
-	•	Outils en ligne de commande modernes : exa, fzf, direnv, atuin
-	•	Sécurité SSH/GPG avec prise en charge de YubiKey
-	•	Alias pratiques et configurations optimisées
+* Gestionnaire de paquets Homebrew
+* Terminal iTerm2 (avec thème Dracula conseillé)
+* Framework Oh My Zsh
+* Prompt visuel Powerlevel10k
+* Plugins Zsh essentiels : zsh-autocomplete, zsh-autosuggestions, zsh-syntax-highlighting
+* Outils en ligne de commande modernes : exa, fzf, direnv, atuin
+* Sécurité SSH/GPG avec prise en charge de YubiKey
+* Alias pratiques et configurations optimisées
 
 ⸻
 
 ## Installation
 
+```bash
 git clone https://github.com/ClaraVnk/terminal.git && bash terminal/ZSHRC_By_Loutre.sh && source ~/.zshrc
+```
 
 Le script va :
 	•	Installer Homebrew si absent
@@ -37,7 +39,9 @@ Le script va :
 ### Powerlevel10k : 
 Après installation, tu peux lancer ou relancer la configuration avec :
 
+```bash
 p10k configure
+```
 
 ### Thème iTerm2 Dracula :
 Le script ne peut pas importer automatiquement le thème. Tu dois :
