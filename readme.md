@@ -20,12 +20,12 @@ This repository contains a complete automated installation script to set up a mo
 
 # ENGLISH
 ```bash
-git clone https://github.com/ClaraVnk/terminal.git && bash terminal/ZSHRC_By_Loutre_en.sh && source ~/.zshrc
+git clone https://github.com/ClaraVnk/terminal.git && zsh terminal/ZSHRC_By_Loutre_en.sh && source ~/.zshrc
 ```
 
 # FRENCH
 ```bash
-git clone https://github.com/ClaraVnk/terminal.git && bash terminal/ZSHRC_By_Loutre.sh && source ~/.zshrc
+git clone https://github.com/ClaraVnk/terminal.git && zsh terminal/ZSHRC_By_Loutre.sh && source ~/.zshrc
 ```
 
 ---
