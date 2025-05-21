@@ -184,4 +184,3 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   fi
 
   echo "🎉 Setup completed!"
-fi
