@@ -109,4 +109,4 @@ if ! grep -q 'GPG_TTY=' ~/.bashrc; then
   echo "✅ Configuration GPG/YubiKey ajoutée à ~/.bashrc"
 fi
 
-echo "🎉 Configuration terminée. Recharge ton shell avec : source ~/.bashrc"
+echo "🎉 Configuration terminée !"
