@@ -22,16 +22,6 @@ Ce dépôt contient un script d’installation complet et automatisé pour confi
 git clone https://github.com/ClaraVnk/terminal.git && bash terminal/ZSHRC_By_Loutre.sh && source ~/.zshrc
 ```
 
-Le script va :
-	•	Installer Homebrew si absent
-	•	Installer iTerm2 (si pas déjà présent)
-	•	Installer Oh My Zsh
-	•	Installer Powerlevel10k et te proposer sa configuration interactive
-	•	Installer et configurer les plugins Zsh listés
-	•	Installer les outils en ligne de commande modernes
-	•	Configurer GPG et YubiKey
-	4.	Relancer ton terminal
-
 ⸻
 
 ## Personnalisation
