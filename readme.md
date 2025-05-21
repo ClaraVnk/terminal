@@ -1,54 +1,60 @@
-# Configuration Zsh macOS - iTerm2
+# Zsh Configuration for macOS - iTerm2
 
 ![Bash Script](https://img.shields.io/badge/bash_script-%23121011.svg?style=for-the-badge&logo=gnu-bash&logoColor=white) ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
 
-Fait avec amour ❤️
+Made with love ❤️
 
-Ce dépôt contient un script d’installation complet et automatisé pour configurer un environnement Zsh moderne et puissant sur macOS, avec :
-* Gestionnaire de paquets Homebrew
-* Terminal iTerm2 (avec thème Dracula conseillé)
-* Framework Oh My Zsh
-* Prompt visuel Powerlevel10k
-* Plugins Zsh essentiels : zsh-autocomplete, zsh-autosuggestions, zsh-syntax-highlighting
-* Outils en ligne de commande modernes : exa, fzf, direnv, atuin
-* Sécurité SSH/GPG avec prise en charge de YubiKey
-* Alias pratiques et configurations optimisées
+This repository contains a complete automated installation script to set up a modern and powerful Zsh environment on macOS, including:
+* Homebrew package manager
+* iTerm2 terminal (Dracula theme recommended)
+* Oh My Zsh framework
+* Powerlevel10k visual prompt
+* Essential Zsh plugins: zsh-autocomplete, zsh-autosuggestions, zsh-syntax-highlighting
+* Modern command line tools: exa, fzf, direnv, atuin
+* SSH/GPG security with YubiKey support
+* Handy aliases and optimized configurations
 
-⸻
+---
 
 ## Installation
 
+# ENGLISH
+```bash
+git clone https://github.com/ClaraVnk/terminal.git && bash terminal/ZSHRC_By_Loutre_en.sh && source ~/.zshrc
+```
+
+# FRENCH
 ```bash
 git clone https://github.com/ClaraVnk/terminal.git && bash terminal/ZSHRC_By_Loutre.sh && source ~/.zshrc
 ```
 
-⸻
+---
 
-## Personnalisation
+## Customization
 
-### Powerlevel10k : 
-Après installation, tu peux lancer ou relancer la configuration avec :
+### Powerlevel10k:
+After installation, you can launch or relaunch the configuration with:
 
 ```bash
 p10k configure
 ```
 
-### Thème iTerm2 Dracula :
-Le script ne peut pas importer automatiquement le thème. Tu dois :
-1. Télécharger le fichier .itermcolors ici : https://draculatheme.com/iterm
-2. Dans iTerm2, aller dans Preferences > Profiles > Colors > Color Presets > Import... et choisir le fichier téléchargé.
-3. Appliquer le preset Dracula dans ce menu.
+### iTerm2 Dracula Theme:
+The script cannot automatically import the theme. You need to:
+1. Download the `.itermcolors` file here: https://draculatheme.com/iterm
+2. In iTerm2, go to Preferences > Profiles > Colors > Color Presets > Import... and select the downloaded file.
+3. Apply the Dracula preset from this menu.
 
-⸻
+---
 
 ## Contributions
 
-Les contributions sont les bienvenues !
-N’hésite pas à ouvrir une issue ou faire une pull request.
-N'oublie pas de laisser une étoile si tu trouves ce dépôt utile !
+Contributions are welcome!  
+Feel free to open an issue or submit a pull request.  
+Don't forget to give a star ⭐️ if you find this repository useful!
 
-⸻
+---
 
-## Licence
+## License
 
 MIT License © Loutre
