@@ -3,6 +3,12 @@
 
 set -e
 
+# Ensure the script is running under Zsh
+if [ -z "$ZSH_VERSION" ]; then
+  echo "🔄 Relance du script en utilisant Zsh..."
+  exec zsh "$0"
+fi
+
 ### INSTALLATION DE HOMEBREW SI ABSENT
 if ! command -v brew &>/dev/null; then
   echo "🔧 Installation de Homebrew..."
