@@ -3,12 +3,22 @@ set -e
 
 ### INSTALLATION DE HOMEBREW (Linuxbrew) SI ABSENT
 if ! command -v brew &>/dev/null; then
-  echo "🔧 Installation de Homebrew (Linuxbrew)..."
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  # Recharge le PATH pour la session en cours
-  test -d ~/.linuxbrew && eval "$(~/.linuxbrew/bin/brew shellenv)"
-  test -d /home/linuxbrew/.linuxbrew && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-  echo "✅ Homebrew installé avec succès."
+  echo "🔧 Homebrew (Linuxbrew) non trouvé."
+  if command -v apt &>/dev/null; then
+    echo "🔧 Installation des paquets manquants via apt..."
+    sudo apt update
+    sudo apt install -y eza atuin fzf direnv pinentry-tty gnupg
+    echo "✅ Paquets installés via apt."
+    # Le reste du script suppose la présence de brew, donc on sort ici.
+    exit 0
+  else
+    echo "🔧 Installation de Homebrew (Linuxbrew)..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    # Recharge le PATH pour la session en cours
+    test -d ~/.linuxbrew && eval "$(~/.linuxbrew/bin/brew shellenv)"
+    test -d /home/linuxbrew/.linuxbrew && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    echo "✅ Homebrew installé avec succès."
+  fi
 fi
 
 ### MISE À JOUR DE BREW

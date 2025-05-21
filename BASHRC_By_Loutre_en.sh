@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
 set -e
 
-### INSTALL HOMEBREW (Linuxbrew) IF MISSING
+### INSTALL HOMEBREW (Linuxbrew) IF MISSING, OR FALL BACK TO APT
 if ! command -v brew &>/dev/null; then
-  echo "🔧 Installing Homebrew (Linuxbrew)..."
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  # Reload PATH for the current session
-  test -d ~/.linuxbrew && eval "$(~/.linuxbrew/bin/brew shellenv)"
-  test -d /home/linuxbrew/.linuxbrew && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-  echo "✅ Homebrew installed successfully."
+  echo "🔧 Homebrew (Linuxbrew) not found."
+  if command -v apt &>/dev/null; then
+    echo "🔧 Installing missing packages via apt..."
+    sudo apt update
+    sudo apt install -y eza atuin fzf direnv pinentry-tty gnupg
+    echo "✅ Packages installed via apt."
+    exit 0
+  else
+    echo "🔧 Installing Homebrew (Linuxbrew)..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    # Reload PATH for the current session
+    test -d ~/.linuxbrew && eval "$(~/.linuxbrew/bin/brew shellenv)"
+    test -d /home/linuxbrew/.linuxbrew && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    echo "✅ Homebrew installed successfully."
+  fi
 fi
 
 ### UPDATE BREW
