@@ -67,7 +67,7 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
 
   # ZSH-SYNTAX-HIGHLIGHTING : https://github.com/zsh-users/zsh-syntax-highlighting
   # ZSH-COMPLETIONS : https://github.com/zsh-users/zsh-completions
-  plugins=(zsh-autocomplete zsh-autosuggestions zsh-syntax-highlighting zsh-completions)
+  plugins=(zsh-autosuggestions zsh-syntax-highlighting zsh-completions)
 
   autoload -Uz compinit
   compinit
