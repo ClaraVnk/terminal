@@ -35,9 +35,9 @@ p10k configure
 
 ### Thème iTerm2 Dracula :
 Le script ne peut pas importer automatiquement le thème. Tu dois :
-	1.	Télécharger le fichier .itermcolors ici : https://draculatheme.com/iterm
-	2.	Dans iTerm2, aller dans Preferences > Profiles > Colors > Color Presets > Import... et choisir le fichier téléchargé.
-	3.	Appliquer le preset Dracula dans ce menu.
+1. Télécharger le fichier .itermcolors ici : https://draculatheme.com/iterm
+2. Dans iTerm2, aller dans Preferences > Profiles > Colors > Color Presets > Import... et choisir le fichier téléchargé.
+3. Appliquer le preset Dracula dans ce menu.
 
 ⸻
 
