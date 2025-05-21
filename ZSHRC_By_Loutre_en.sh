@@ -174,9 +174,9 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   read -r answer
   if [[ "$answer" =~ ^[Yy]$ ]]; then
     echo "🔧 Installing publish_py script..."
-    curl -L -o ~/install_publish_alias.sh https://raw.githubusercontent.com/ClaraVnk/python-package/main/install_publish_alias.sh
-    chmod +x ~/install_publish_alias.sh
-    ~/install_publish_alias.sh
+    curl -L -o ~/install_publish_alias.sh https://raw.githubusercontent.com/ClaraVnk/python-package/main/install_publish_alias_en.sh
+    chmod +x ~/install_publish_alias_en.sh
+    ~/install_publish_alias_en.sh
     source ~/.zshrc
     echo "✅ publish_py alias added to ~/.zshrc"
   else
