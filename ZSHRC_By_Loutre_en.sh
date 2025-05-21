@@ -76,6 +76,7 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   plugins=(zsh-autosuggestions zsh-syntax-highlighting zsh-completions)
 
   autoload -Uz compinit
+  compaudit | xargs chmod -R go-w 2>/dev/null
   compinit
 
   ### ATUIN INSTALLATION: https://github.com/ellie/atuin
