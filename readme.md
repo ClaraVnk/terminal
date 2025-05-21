@@ -19,12 +19,12 @@ This repository contains a complete automated installation script to set up a mo
 ## Installation
 
 # ENGLISH
-```bash
+```zsh
 git clone https://github.com/ClaraVnk/terminal.git && zsh terminal/ZSHRC_By_Loutre_en.sh && source ~/.zshrc
 ```
 
 # FRENCH
-```bash
+```zsh
 git clone https://github.com/ClaraVnk/terminal.git && zsh terminal/ZSHRC_By_Loutre.sh && source ~/.zshrc
 ```
 
@@ -35,7 +35,7 @@ git clone https://github.com/ClaraVnk/terminal.git && zsh terminal/ZSHRC_By_Lout
 ### Powerlevel10k:
 After installation, you can launch or relaunch the configuration with:
 
-```bash
+```zsh
 p10k configure
 ```
 

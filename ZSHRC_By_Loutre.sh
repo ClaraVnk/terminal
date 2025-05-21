@@ -149,33 +149,33 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
     echo "✅ direnv installé avec succès."
   fi
 
-  ### EXA : https://the.exa.website/
-  if ! brew list exa &>/dev/null; then
-    echo "🔧 Installation de exa..."
-    brew install exa
-    echo "✅ exa installé avec succès."
+  ### EZA : https://github.com/eza-community/eza
+  if ! brew list eza &>/dev/null; then
+    echo "🔧 Installation de eza..."
+    brew install eza
+    echo "✅ eza installé avec succès."
   fi
 
-  # Ajout des alias exa dans ~/.zshrc uniquement s'ils sont absents
+  # Ajout des alias eza dans ~/.zshrc uniquement s'ils sont absents
   if ! grep -q 'alias ls=' ~/.zshrc; then
-    echo '# Alias exa' >> ~/.zshrc
-    echo 'alias ls="exa -a --icons"' >> ~/.zshrc
-    echo 'alias ll="exa -1a --icons"' >> ~/.zshrc
+    echo '# Alias eza' >> ~/.zshrc
+    echo 'alias ls="eza -a --icons"' >> ~/.zshrc
+    echo 'alias ll="eza -1a --icons"' >> ~/.zshrc
     echo 'alias ld="ll"' >> ~/.zshrc
-    echo 'alias la="exa -lagh --icons"' >> ~/.zshrc
-    echo 'alias lt="exa -a --tree --icons --level=2"' >> ~/.zshrc
-    echo 'alias ltf="exa -a --tree --icons"' >> ~/.zshrc
-    echo 'alias lat="exa -lagh --tree --icons"' >> ~/.zshrc
-    echo "✅ Alias exa ajoutés à ~/.zshrc"
+    echo 'alias la="eza -lagh --icons"' >> ~/.zshrc
+    echo 'alias lt="eza -a --tree --icons --level=2"' >> ~/.zshrc
+    echo 'alias ltf="eza -a --tree --icons"' >> ~/.zshrc
+    echo 'alias lat="eza -lagh --tree --icons"' >> ~/.zshrc
+    echo "✅ Alias eza ajoutés à ~/.zshrc"
   fi
 
-  alias ls="exa -a --icons"                   # short, multi-line
-  alias ll="exa -1a --icons"                  # list, 1 per line
+  alias ls="eza -a --icons"                   # short, multi-line
+  alias ll="eza -1a --icons"                  # list, 1 per line
   alias ld="ll"                               # ^^^, NOTE: Trying to move to this for alternate hand commands
-  alias la="exa -lagh --icons"                  # list with info
-  alias lt="exa -a --tree --icons --level=2"  # list with tree level 2
-  alias ltf="exa -a --tree --icons"           # list with tree
-  alias lat="exa -lagh --tree --icons"          # list with info and tree
+  alias la="eza -lagh --icons"                  # list with info
+  alias lt="eza -a --tree --icons --level=2"  # list with tree level 2
+  alias ltf="eza -a --tree --icons"           # list with tree
+  alias lat="eza -lagh --tree --icons"          # list with info and tree
 
 ### INSTALLATION DU SCRIPT D'ALIAS POUR PYTHON PACKAGE
 echo "Souhaites-tu installer le script publish_py pour automatiser la publication de paquets Python ? (y/N)"
