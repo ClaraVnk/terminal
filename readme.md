@@ -44,7 +44,7 @@ git clone https://github.com/ClaraVnk/terminal.git && zsh terminal/ZSHRC_By_Lout
 
 ---
 
-## Customization
+## Customization (macOs only)
 
 ### Powerlevel10k:
 After installation, you can launch or relaunch the configuration with:
@@ -53,7 +53,7 @@ After installation, you can launch or relaunch the configuration with:
 p10k configure
 ```
 
-### iTerm2 Dracula Theme (macOs only):
+### iTerm2 Dracula Theme:
 The script cannot automatically import the theme. You need to:
 1. Download the `.itermcolors` file here: https://draculatheme.com/iterm
 2. In iTerm2, go to Preferences > Profiles > Colors > Color Presets > Import... and select the downloaded file.
