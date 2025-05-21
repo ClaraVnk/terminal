@@ -170,4 +170,18 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   alias ltf="exa -a --tree --icons"           # list with tree
   alias lat="exa -lagh --tree --icons"          # list with info and tree
 
-  ### RACCOURCIS
+### INSTALLATION DU SCRIPT D'ALIAS POUR PYTHON PACKAGE
+echo "Souhaites-tu installer le script publish_py pour automatiser la publication de paquets Python ? (y/N)"
+read -r answer
+if [[ "$answer" =~ ^[Yy]$ ]]; then
+  echo "🔧 Installation du script publish_py..."
+  curl -L -o ~/install_publish_alias.sh https://raw.githubusercontent.com/ClaraVnk/python-package/main/install_publish_alias.sh
+  chmod +x ~/install_publish_alias.sh
+  ~/install_publish_alias.sh
+  source ~/.zshrc
+  echo "✅ Alias publish.py ajouté à ~/.zshrc"
+else
+  echo "⚠️ Installation du script publish_py annulée."
+fi
+
+echo "🎉 Configuration terminée !"
