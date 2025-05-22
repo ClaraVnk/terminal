@@ -61,6 +61,24 @@ The script cannot automatically import the theme. You need to:
 
 ---
 
+## Backup & Restore (migration)
+
+### Backup your environnement 
+Run the backup script to save your dotfiles, installed packages, SSH keys (optional), and Git config into a timestamped archive:
+```bash
+./backup.sh
+```
+This will create an archive in your home directory, e.g. migration_backup_20230522_123456.tar.gz.
+
+### Restore your environment
+To restore on a new machine:
+```bash
+./restore.sh path_to/migration_backup_20230522_123456.tar.gz
+```
+The restore script will extract the archive, restore dotfiles, reinstall packages (Homebrew, pip, npm), optionally restore SSH keys, and Git config.
+
+---
+
 ## Contributions
 
 Contributions are welcome!  
