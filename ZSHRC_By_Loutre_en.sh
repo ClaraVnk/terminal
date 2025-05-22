@@ -9,7 +9,34 @@ if [ -z "$ZSH_VERSION" ]; then
   exec zsh "$0"
 fi
 
+install_if_missing() {
+  local package=$1
+  if ! brew list "$package" &>/dev/null; then
+    echo "🔧 Installing $package..."
+    brew install "$package"
+    echo "✅ $package installed successfully."
+  fi
+}
+
+backup_zshrc() {
+  if [ -f "$HOME/.zshrc" ]; then
+    local backup_file="$HOME/.zshrc.backup.$(date +%Y%m%d%H%M%S)"
+    cp "$HOME/.zshrc" "$backup_file"
+    echo "✅ Backup of .zshrc created at $backup_file"
+  fi
+}
+
+check_internet() {
+  echo "🌐 Checking internet connection..."
+  if ! ping -c 1 -W 3 8.8.8.8 &>/dev/null; then
+    echo "❌ No internet connection detected. Please check your network and try again."
+    exit 1
+  fi
+  echo "✅ Internet connection is active."
+}
+
 ### INSTALL HOMEBREW IF MISSING
+check_internet
 if ! command -v brew &>/dev/null; then
   echo "🔧 Installing Homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -19,16 +46,16 @@ if ! command -v brew &>/dev/null; then
 fi
 
 ### INSTALL iTerm2 IF MISSING
+check_internet
 if [ ! -d "/Applications/iTerm.app" ]; then
-  echo "🔧 Installing iTerm2..."
-  brew install --cask iterm2
-  echo "✅ iTerm2 installed successfully."
+  install_if_missing "iterm2"
 fi
 
 ### THE REST RUNS ONLY IF USING iTerm2
 if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
 
   ### INSTALL OH MY ZSH
+  check_internet
   if [ ! -d "$HOME/.oh-my-zsh" ]; then
     echo "🔧 Installing Oh My Zsh..."
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
@@ -38,6 +65,7 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   source $HOME/.oh-my-zsh/oh-my-zsh.sh
 
   ### INSTALL POWERLEVEL10K
+  check_internet
   if ! brew list powerlevel10k &>/dev/null; then
     echo "🔧 Installing Powerlevel10k..."
     brew install powerlevel10k
@@ -80,20 +108,20 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   compinit
 
   ### ATUIN INSTALLATION: https://github.com/ellie/atuin
-  if ! command -v atuin &>/dev/null; then
-    echo "🔧 Installing AtuIn..."
-    brew install atuin
-    echo "✅ AtuIn installed successfully."
-  fi
+  check_internet
+  install_if_missing "atuin"
   if [[ $- == *i* ]]; then
     eval "$(atuin init zsh)"
   fi
+  backup_zshrc
   if ! grep -q 'atuin init zsh' ~/.zshrc; then
     echo 'eval "$(atuin init zsh)"' >> ~/.zshrc
     echo "✅ AtuIn initialization added to ~/.zshrc"
   fi
 
   ### FZF: https://github.com/junegunn/fzf
+  check_internet
+  install_if_missing "fzf"
   if ! brew list fzf &>/dev/null; then
     echo "🔧 Installing fzf..."
     brew install fzf
@@ -104,23 +132,17 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   if [ -f ~/.fzf.zsh ]; then
     source ~/.fzf.zsh
   fi
+  backup_zshrc
   if [ -f ~/.fzf.zsh ] && ! grep -q 'source ~/.fzf.zsh' ~/.zshrc; then
     echo 'source ~/.fzf.zsh' >> ~/.zshrc
     echo "✅ fzf initialization added to ~/.zshrc"
   fi
 
   ### PINENTRY-MAC & GNUPG INSTALLATION
+  check_internet
   if command -v brew &>/dev/null; then
-    if ! brew list pinentry-mac &>/dev/null; then
-      echo "🔧 Installing pinentry-mac..."
-      brew install pinentry-mac
-      echo "✅ pinentry-mac installed successfully."
-    fi
-    if ! brew list gnupg &>/dev/null; then
-      echo "🔧 Installing gnupg..."
-      brew install gnupg
-      echo "✅ gnupg installed successfully."
-    fi
+    install_if_missing "pinentry-mac"
+    install_if_missing "gnupg"
   fi
 
   ### YUBIKEY ALIASES: https://github.com/drduh/YubiKey-Guide
@@ -128,6 +150,7 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
   gpgconf --launch gpg-agent
 
+  backup_zshrc
   if ! grep -q 'GPG_TTY=' ~/.zshrc; then
     echo '# YubiKey + GPG config' >> ~/.zshrc
     echo 'export GPG_TTY="$(tty)"' >> ~/.zshrc
@@ -137,26 +160,22 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   fi
 
   ### DIRENV: https://direnv.net/
-  eval "$(direnv hook zsh)"
+  backup_zshrc
   if ! grep -q 'eval "$(direnv hook zsh)"' ~/.zshrc; then
     echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
     echo "✅ Direnv initialization added to ~/.zshrc"
   fi
-  if ! brew list direnv &>/dev/null; then
-    echo "🔧 Installing direnv..."
-    brew install direnv
-    echo "✅ direnv installed successfully."
-  fi
+  check_internet
+  install_if_missing "direnv"
+  eval "$(direnv hook zsh)"
 
   ### EZA: https://eza.rocks/
-  if ! brew list eza &>/dev/null; then
-    echo "🔧 Installing eza..."
-    brew install eza
-    echo "✅ eza installed successfully."
-  fi
+  check_internet
+  install_if_missing "eza"
 
-  # Add eza aliases to ~/.zshrc only if missing
-  if ! grep -q 'alias ls=' ~/.zshrc; then
+  # Add eza aliases to ~/.zshrc only if missing (checks all aliases)
+  backup_zshrc
+  if ! grep -q 'alias ls="eza -a --icons"' ~/.zshrc || ! grep -q 'alias ll="eza -1a --icons"' ~/.zshrc || ! grep -q 'alias ld="ll"' ~/.zshrc || ! grep -q 'alias la="eza -lagh --icons"' ~/.zshrc || ! grep -q 'alias lt="eza -a --tree --icons --level=2"' ~/.zshrc || ! grep -q 'alias ltf="eza -a --tree --icons"' ~/.zshrc || ! grep -q 'alias lat="eza -lagh --tree --icons"' ~/.zshrc; then
     echo '# Alias eza' >> ~/.zshrc
     echo 'alias ls="eza -a --icons"' >> ~/.zshrc
     echo 'alias ll="eza -1a --icons"' >> ~/.zshrc
@@ -180,15 +199,18 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   echo "Would you like to install the publish_py script to automate Python package publishing? (y/N)"
   read -r answer
   if [[ "$answer" =~ ^[Yy]$ ]]; then
+    check_internet
     echo "🔧 Installing publish_py script..."
-    curl -L -o ~/install_publish_alias.sh https://raw.githubusercontent.com/ClaraVnk/python-package/main/install_publish_alias_en.sh
-    chmod +x ~/install_publish_alias_en.sh
-    ~/install_publish_alias_en.sh
+    tmpfile=$(mktemp)
+    curl -L -o "$tmpfile" https://raw.githubusercontent.com/ClaraVnk/python-package/main/install_publish_alias_en.sh
+    chmod +x "$tmpfile"
+    "$tmpfile"
+    rm -f "$tmpfile"
     source ~/.zshrc
     echo "✅ publishpy alias added to ~/.zshrc"
   else
-    echo "⚠️ publishp_y script installation skipped."
+    echo "⚠️ publish_py script installation skipped."
   fi
 
   echo "🎉 Setup completed!"
-  fi
+fi

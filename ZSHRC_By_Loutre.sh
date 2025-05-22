@@ -9,7 +9,29 @@ if [ -z "$ZSH_VERSION" ]; then
   exec zsh "$0"
 fi
 
+install_if_missing() {
+  if ! brew list "$1" &>/dev/null; then
+    echo "🔧 Installation de $1..."
+    brew install "$1"
+    echo "✅ $1 installé avec succès."
+  fi
+}
+
+check_internet() {
+  if ! ping -c 1 -W 2 google.com &>/dev/null; then
+    echo "❌ Pas de connexion internet. Veuillez vérifier votre connexion."
+    exit 1
+  fi
+}
+
+backup_zshrc() {
+  if [ -f ~/.zshrc ]; then
+    cp ~/.zshrc ~/.zshrc.backup_$(date +%Y%m%d_%H%M%S)
+  fi
+}
+
 ### INSTALLATION DE HOMEBREW SI ABSENT
+check_internet
 if ! command -v brew &>/dev/null; then
   echo "🔧 Installation de Homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -36,6 +58,8 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   fi
   # Chargement de Oh My Zsh
   source $HOME/.oh-my-zsh/oh-my-zsh.sh
+
+  check_internet
 
   ### INSTALLATION POWERLEVEL10K
   if ! brew list powerlevel10k &>/dev/null; then
@@ -80,20 +104,19 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   compinit
 
   ### INSTALLATION ATUIN : https://github.com/ellie/atuin
-  if ! command -v atuin &>/dev/null; then
-    echo "🔧 Installation de AtuIn..."
-    brew install atuin
-    echo "✅ AtuIn installé avec succès."
-  fi
+  check_internet
+  install_if_missing atuin
   if [[ $- == *i* ]]; then
     eval "$(atuin init zsh)"
   fi
   if ! grep -q 'atuin init zsh' ~/.zshrc; then
+    backup_zshrc
     echo 'eval "$(atuin init zsh)"' >> ~/.zshrc
     echo "✅ Initialisation Atuin ajoutée à ~/.zshrc"
   fi
 
   ### FZF : https://github.com/junegunn/fzf
+  check_internet
   if ! brew list fzf &>/dev/null; then
     echo "🔧 Installation de fzf..."
     brew install fzf
@@ -105,24 +128,16 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
     source ~/.fzf.zsh
   fi
   if [ -f ~/.fzf.zsh ] && ! grep -q 'source ~/.fzf.zsh' ~/.zshrc; then
+    backup_zshrc
     echo 'source ~/.fzf.zsh' >> ~/.zshrc
     echo "✅ Initialisation fzf ajoutée à ~/.zshrc"
   fi
 
   ### INSTALLATION DE PINENTRY-MAC & GNUPG
-  if command -v brew &>/dev/null; then
-    if ! brew list pinentry-mac &>/dev/null; then
-      echo "🔧 Installation de pinentry-mac..."
-      brew install pinentry-mac
-      echo "✅ pinentry-mac installé avec succès."
-    fi
-    ### GNUPG
-    if ! brew list gnupg &>/dev/null; then
-      echo "🔧 Installation de gnupg..."
-      brew install gnupg
-      echo "✅ gnupg installé avec succès."
-    fi
-  fi
+  check_internet
+  for pkg in pinentry-mac gnupg; do
+    install_if_missing "$pkg"
+  done
 
   ### ALIAS POUR LA YUBIKEY : https://github.com/drduh/YubiKey-Guide
   export GPG_TTY="$(tty)"
@@ -130,6 +145,7 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   gpgconf --launch gpg-agent
 
   if ! grep -q 'GPG_TTY=' ~/.zshrc; then
+    backup_zshrc
     echo '# YubiKey + GPG config' >> ~/.zshrc
     echo 'export GPG_TTY="$(tty)"' >> ~/.zshrc
     echo 'export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)' >> ~/.zshrc
@@ -140,24 +156,18 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   ### DIRENV : https://direnv.net/
   eval "$(direnv hook zsh)"
   if ! grep -q 'eval "$(direnv hook zsh)"' ~/.zshrc; then
+    backup_zshrc
     echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
     echo "✅ Initialisation Direnv ajoutée à ~/.zshrc"
   fi
-  if ! brew list direnv &>/dev/null; then
-    echo "🔧 Installation de direnv..."
-    brew install direnv
-    echo "✅ direnv installé avec succès."
-  fi
+  install_if_missing direnv
 
   ### EZA : https://github.com/eza-community/eza
-  if ! brew list eza &>/dev/null; then
-    echo "🔧 Installation de eza..."
-    brew install eza
-    echo "✅ eza installé avec succès."
-  fi
+  install_if_missing eza
 
   # Ajout des alias eza dans ~/.zshrc uniquement s'ils sont absents
-  if ! grep -q 'alias ls=' ~/.zshrc; then
+  if ! grep -q 'alias ls=' ~/.zshrc || ! grep -q 'alias ll=' ~/.zshrc || ! grep -q 'alias ld=' ~/.zshrc || ! grep -q 'alias la=' ~/.zshrc || ! grep -q 'alias lt=' ~/.zshrc || ! grep -q 'alias ltf=' ~/.zshrc || ! grep -q 'alias lat=' ~/.zshrc; then
+    backup_zshrc
     echo '# Alias eza' >> ~/.zshrc
     echo 'alias ls="eza -a --icons"' >> ~/.zshrc
     echo 'alias ll="eza -1a --icons"' >> ~/.zshrc
@@ -178,13 +188,17 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   alias lat="eza -lagh --tree --icons"          # list with info and tree
 
 ### INSTALLATION DU SCRIPT D'ALIAS POUR PYTHON PACKAGE
+check_internet
 echo "Souhaites-tu installer le script publish_py pour automatiser la publication de paquets Python ? (y/N)"
 read -r answer
 if [[ "$answer" =~ ^[Yy]$ ]]; then
   echo "🔧 Installation du script publish_py..."
-  curl -L -o ~/install_publish_alias.sh https://raw.githubusercontent.com/ClaraVnk/python-package/main/install_publish_alias.sh
-  chmod +x ~/install_publish_alias.sh
-  ~/install_publish_alias.sh
+  backup_zshrc
+  tmpfile=$(mktemp)
+  curl -L -o "$tmpfile" https://raw.githubusercontent.com/ClaraVnk/python-package/main/install_publish_alias.sh
+  chmod +x "$tmpfile"
+  "$tmpfile"
+  rm -f "$tmpfile"
   source ~/.zshrc
   echo "✅ Alias publishpy ajouté à ~/.zshrc"
 else
