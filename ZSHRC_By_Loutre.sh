@@ -186,7 +186,7 @@ if [[ "$answer" =~ ^[Yy]$ ]]; then
   chmod +x ~/install_publish_alias.sh
   ~/install_publish_alias.sh
   source ~/.zshrc
-  echo "✅ Alias publish.py ajouté à ~/.zshrc"
+  echo "✅ Alias publishpy ajouté à ~/.zshrc"
 else
   echo "⚠️ Installation du script publish_py annulée."
 fi

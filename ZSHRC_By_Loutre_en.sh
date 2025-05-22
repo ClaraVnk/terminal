@@ -185,9 +185,9 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
     chmod +x ~/install_publish_alias_en.sh
     ~/install_publish_alias_en.sh
     source ~/.zshrc
-    echo "✅ publish_py alias added to ~/.zshrc"
+    echo "✅ publishpy alias added to ~/.zshrc"
   else
-    echo "⚠️ publish_py script installation skipped."
+    echo "⚠️ publishp_y script installation skipped."
   fi
 
   echo "🎉 Setup completed!"
