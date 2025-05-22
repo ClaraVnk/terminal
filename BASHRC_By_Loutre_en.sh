@@ -108,4 +108,18 @@ if ! grep -q 'GPG_TTY=' ~/.bashrc; then
   echo "✅ GPG/YubiKey configuration added to ~/.bashrc"
 fi
 
+### INSTALL THE ALIAS SCRIPT FOR PYTHON PACKAGE
+echo "Would you like to install the publish_py script to automate Python package publishing? (y/N)"
+read -r answer
+if [[ "$answer" =~ ^[Yy]$ ]]; then
+  echo "🔧 Installing the publish_py script..."
+  curl -L -o ~/install_publish_alias.sh https://raw.githubusercontent.com/ClaraVnk/python-package/main/install_publish_alias.sh
+  chmod +x ~/install_publish_alias.sh
+  ~/install_publish_alias.sh
+  source ~/.bashrc
+  echo "✅ Alias publishpy added to ~/.bashrc"
+else
+  echo "⚠️ publish_py script installation cancelled."
+fi
+
 echo "🎉 Setup complete !"
