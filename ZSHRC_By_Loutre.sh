@@ -11,6 +11,15 @@ if [[ "$LANG" == fr_* ]]; then
   LANG_MSG_PUBLISH_INSTALL="Souhaites-tu installer le script publish_py pour automatiser la publication de paquets Python ? (o/N)"
   LANG_MSG_PUBLISH_CANCEL="⚠️ Installation du script publish_py annulée."
   LANG_MSG_SETUP_COMPLETE="🎉 Configuration de l'environnement terminée."
+  LANG_MSG_ITERM_AI="💡 Pour activer l'IA dans iTerm2 :"
+  LANG_MSG_ITERM_AI_STEPS="   1. Ouvrez les préférences d'iTerm2 (⌘,)\n   2. Allez dans 'General' > 'Magic'\n   3. Activez 'Enable AI features'\n   4. Configurez votre clé API OpenAI"
+  LANG_MSG_ITERM_AI_INSTALL="🔧 Installation du plugin AI pour iTerm2..."
+  LANG_MSG_ITERM_AI_SUCCESS="✅ Plugin AI iTerm2 installé avec succès"
+  LANG_MSG_ITERM_AI_PROMPT="Souhaitez-vous installer le plugin AI pour iTerm2 ? Il permet d'utiliser l'IA générative directement dans votre terminal (o/N)"
+  LANG_MSG_ITERM_AI_CANCEL="⚠️ Installation du plugin AI iTerm2 annulée"
+  LANG_MSG_ITERM_THEME="🎨 Téléchargement du thème Dracula pour iTerm2..."
+  LANG_MSG_ITERM_THEME_SUCCESS="✅ Thème Dracula téléchargé avec succès"
+  LANG_MSG_ITERM_THEME_STEPS="💡 Pour activer le thème Dracula dans iTerm2 :\n   1. Ouvrez les préférences d'iTerm2 (⌘,)\n   2. Allez dans 'Profiles' > 'Colors'\n   3. Cliquez sur 'Color Presets...' > 'Import...'\n   4. Sélectionnez le fichier : ~/.iterm2/themes/Dracula.itermcolors\n   5. Sélectionnez 'Dracula' dans 'Color Presets...'"
 else
   LANG_MSG_SCRIPT_RELAUNCH="🔄 Relaunching script using Zsh..."
   LANG_MSG_INSTALLING="🔧 Installing"
@@ -20,6 +29,15 @@ else
   LANG_MSG_PUBLISH_INSTALL="Do you want to install the publish_py script to automate Python package publishing? (y/N)"
   LANG_MSG_PUBLISH_CANCEL="⚠️ publish_py script installation cancelled."
   LANG_MSG_SETUP_COMPLETE="🎉 Environment setup completed."
+  LANG_MSG_ITERM_AI="💡 To enable AI in iTerm2:"
+  LANG_MSG_ITERM_AI_STEPS="   1. Open iTerm2 preferences (⌘,)\n   2. Go to 'General' > 'Magic'\n   3. Enable 'Enable AI features'\n   4. Configure your OpenAI API key"
+  LANG_MSG_ITERM_AI_INSTALL="🔧 Installing iTerm2 AI plugin..."
+  LANG_MSG_ITERM_AI_SUCCESS="✅ iTerm2 AI plugin successfully installed"
+  LANG_MSG_ITERM_AI_PROMPT="Would you like to install the iTerm2 AI plugin? It enables generative AI features directly in your terminal (y/N)"
+  LANG_MSG_ITERM_AI_CANCEL="⚠️ iTerm2 AI plugin installation cancelled"
+  LANG_MSG_ITERM_THEME="🎨 Downloading Dracula theme for iTerm2..."
+  LANG_MSG_ITERM_THEME_SUCCESS="✅ Dracula theme successfully downloaded"
+  LANG_MSG_ITERM_THEME_STEPS="💡 To activate Dracula theme in iTerm2:\n   1. Open iTerm2 preferences (⌘,)\n   2. Go to 'Profiles' > 'Colors'\n   3. Click on 'Color Presets...' > 'Import...'\n   4. Select the file: ~/.iterm2/themes/Dracula.itermcolors\n   5. Select 'Dracula' from 'Color Presets...'"
 fi
 
 # Donne les droits d'exécution au script
@@ -77,6 +95,34 @@ if [ ! -d "/Applications/iTerm.app" ]; then
     echo "$LANG_MSG_INSTALLING iTerm2..."
     brew install --cask iterm2
     echo "✅ iTerm2 $LANG_MSG_INSTALLED"
+    
+    # Installation du thème Dracula
+    echo "$LANG_MSG_ITERM_THEME"
+    mkdir -p ~/.iterm2/themes
+    curl -L "https://raw.githubusercontent.com/dracula/iterm/master/Dracula.itermcolors" -o ~/.iterm2/themes/Dracula.itermcolors
+    echo "$LANG_MSG_ITERM_THEME_SUCCESS"
+    echo -e "$LANG_MSG_ITERM_THEME_STEPS"
+fi
+
+### INSTALLATION DU PLUGIN AI ITERM2
+if [ ! -d "/Applications/iTerm2 AI Plugin.app" ]; then
+    echo "$LANG_MSG_ITERM_AI_PROMPT"
+    read -r answer
+    if [[ "$LANG" == fr_* && "$answer" =~ ^[oO]$ ]] || [[ "$LANG" != fr_* && "$answer" =~ ^[yY]$ ]]; then
+        echo "$LANG_MSG_ITERM_AI_INSTALL"
+        # Création d'un dossier temporaire
+        tmp_dir=$(mktemp -d)
+        # Téléchargement et installation du plugin
+        curl -L "https://iterm2.com/downloads/ai/iTerm2%20AI%20Plugin.zip" -o "$tmp_dir/iterm2_ai_plugin.zip"
+        unzip -q "$tmp_dir/iterm2_ai_plugin.zip" -d "/Applications/"
+        # Nettoyage
+        rm -rf "$tmp_dir"
+        echo "$LANG_MSG_ITERM_AI_SUCCESS"
+        echo "$LANG_MSG_ITERM_AI"
+        echo -e "$LANG_MSG_ITERM_AI_STEPS"
+    else
+        echo "$LANG_MSG_ITERM_AI_CANCEL"
+    fi
 fi
 
 ### TOUT LE RESTE NE S'EXECUTE QUE SI ON EST DANS ITERM2
@@ -115,15 +161,6 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
 
   # Création/Sauvegarde du .zshrc
   backup_zshrc
-  
-  # Configuration de base Oh My Zsh
-  {
-    echo 'export ZSH="$HOME/.oh-my-zsh"'
-    echo 'ZSH_THEME="powerlevel10k/powerlevel10k"'
-    echo 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting zsh-completions)'
-    echo 'autoload -U compinit && compinit'  # Active les completions
-    echo 'source $ZSH/oh-my-zsh.sh'
-  } > ~/.zshrc
 
   ### INSTALLATION POWERLEVEL10K
   if ! brew list powerlevel10k &>/dev/null; then
@@ -132,21 +169,70 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
     echo "✅ Powerlevel10k $LANG_MSG_INSTALLED"
   fi
 
-  # Configuration de Powerlevel10k
-  P10K_PATH="$(brew --prefix)/share/powerlevel10k/powerlevel10k.zsh-theme"
-  if [ -f "$P10K_PATH" ]; then
-    echo "source $P10K_PATH" >> ~/.zshrc
-    # Ajout de l'alias p10k pour faciliter la configuration ultérieure
-    echo 'alias p10k="$(brew --prefix)/share/powerlevel10k/powerlevel10k"' >> ~/.zshrc
+  # Configuration de base Oh My Zsh et Powerlevel10k
+  {
+    # Configuration de base
+    echo 'export ZSH="$HOME/.oh-my-zsh"'
     
-    # Création du lien symbolique pour le thème dans Oh My Zsh
-    mkdir -p "$ZSH_CUSTOM/themes/powerlevel10k"
-    ln -sf "$P10K_PATH" "$ZSH_CUSTOM/themes/powerlevel10k/powerlevel10k.zsh-theme"
+    # Homebrew PATH (doit être avant tout le reste)
+    echo '# Homebrew PATH configuration'
+    echo 'if [[ -x /opt/homebrew/bin/brew ]]; then'
+    echo '  eval "$(/opt/homebrew/bin/brew shellenv)"'
+    echo 'elif [[ -x /usr/local/bin/brew ]]; then'
+    echo '  eval "$(/usr/local/bin/brew shellenv)"'
+    echo 'fi'
+
+    # Configuration Powerlevel10k
+    P10K_PATH="$(brew --prefix)/share/powerlevel10k/powerlevel10k.zsh-theme"
+    if [ -f "$P10K_PATH" ]; then
+      # Création du lien symbolique pour le thème dans Oh My Zsh
+      mkdir -p "$ZSH_CUSTOM/themes/powerlevel10k"
+      ln -sf "$P10K_PATH" "$ZSH_CUSTOM/themes/powerlevel10k/powerlevel10k.zsh-theme"
+      echo 'ZSH_THEME="powerlevel10k/powerlevel10k"'
+      echo 'alias p10k="$(brew --prefix)/share/powerlevel10k/powerlevel10k"'
+    else
+      echo "$LANG_MSG_POWERLEVEL_ERROR"
+      echo 'ZSH_THEME="robbyrussell"'  # Thème par défaut si powerlevel10k n'est pas trouvé
+    fi
     
-    echo "$LANG_MSG_POWERLEVEL_CONFIG"
-  else
-    echo "$LANG_MSG_POWERLEVEL_ERROR"
-  fi
+    # Oh My Zsh plugins
+    echo 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting zsh-completions)'
+    
+    # Source Oh My Zsh
+    echo 'source $ZSH/oh-my-zsh.sh'
+    
+    # Activation des completions
+    echo 'autoload -U compinit && compinit'
+
+    # Configurations des outils
+    echo '# Tool configurations'
+    echo 'if (( $+commands[atuin] )); then'
+    echo '  eval "$(atuin init zsh)"'
+    echo 'fi'
+
+    echo 'if (( $+commands[direnv] )); then'
+    echo '  eval "$(direnv hook zsh)"'
+    echo 'fi'
+
+    echo 'if (( $+commands[gpgconf] )); then'
+    echo '  export GPG_TTY="$(tty)"'
+    echo '  export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"'
+    echo '  gpgconf --launch gpg-agent 2>/dev/null'
+    echo 'fi'
+
+    # Alias eza
+    echo 'if (( $+commands[eza] )); then'
+    echo '  alias ls="eza -a --icons"'
+    echo '  alias ll="eza -1a --icons"'
+    echo '  alias ld="ll"'
+    echo '  alias la="eza -lagh --icons"'
+    echo '  alias lt="eza -a --tree --icons --level=2"'
+    echo '  alias ltf="eza -a --tree --icons"'
+    echo '  alias lat="eza -lagh --tree --icons"'
+    echo 'fi'
+  } > ~/.zshrc
+
+  echo "$LANG_MSG_POWERLEVEL_CONFIG"
 
   ### INSTALLATION ATUIN
   echo "🔄 Installation d'Atuin..."
@@ -155,8 +241,6 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
     if [[ $- == *i* ]]; then
       eval "$(atuin init zsh)"
     fi
-    echo 'eval "$(atuin init zsh)"' >> ~/.zshrc
-    echo "✅ Installation d'Atuin terminée"
   fi
 
   ### INSTALLATION DE PINENTRY-MAC & GNUPG
@@ -165,30 +249,6 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
     install_if_missing "$pkg"
   done
   echo "✅ Installation des outils de cryptographie terminée"
-
-  ### INSTALLATION DIRENV
-  echo "🔄 Installation de Direnv..."
-  install_if_missing direnv
-  echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
-  echo "✅ CoInstallation de Direnv terminée"
-
-  # Configuration GPG/YubiKey
-  echo "🔄 Configuration de GPG/YubiKey..."
-  if command -v gpgconf &>/dev/null; then
-    mkdir -p ~/.gnupg
-    chmod 700 ~/.gnupg
-    {
-      echo '# YubiKey + GPG config'
-      echo 'export GPG_TTY="$(tty)"'
-      if gpg-agent --version &>/dev/null; then
-        echo 'export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"'
-        echo 'gpgconf --launch gpg-agent'
-      fi
-    } >> ~/.zshrc
-    echo "✅ Configuration de GPG/YubiKey terminée"
-  else
-    echo "⚠️ gpgconf non trouvé, configuration GPG/YubiKey ignorée"
-  fi
 
   ### INSTALLATION EZA
   echo "🔄 Installation d'Eza..."
@@ -223,6 +283,15 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   fi
 
   echo "$LANG_MSG_SETUP_COMPLETE"
-  # Rechargement de la configuration à la fin de toutes les installations
-  exec zsh -l
+  
+  # Ajout des messages pour le rechargement
+  if [[ "$LANG" == fr_* ]]; then
+    echo "💡 Pour appliquer les changements, vous pouvez :"
+    echo "   - Soit ouvrir un nouveau terminal"
+    echo "   - Soit taper 'source ~/.zshrc' dans le terminal actuel"
+  else
+    echo "💡 To apply changes, you can either:"
+    echo "   - Open a new terminal"
+    echo "   - Type 'source ~/.zshrc' in the current terminal"
+  fi
 fi

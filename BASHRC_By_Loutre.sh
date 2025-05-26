@@ -20,6 +20,9 @@ if [[ "$LANG" == fr_* ]]; then
   LANG_MSG_SETUP_COMPLETE="🎉 Configuration de l'environnement terminée."
   LANG_MSG_BASHIT_CONFIG="💡 Pour configurer Bash-it, tapez 'bash-it show aliases' et 'bash-it show plugins' après le redémarrage du terminal"
   LANG_MSG_BASHIT_ERROR="⚠️ Bash-it n'a pas été trouvé dans le chemin attendu."
+  LANG_MSG_AI_ASSISTANT_PROMPT="Souhaitez-vous installer bash-ai, un assistant AI pour votre terminal ? Il offre une interface en langage naturel et un système de plugins (o/N)"
+  LANG_MSG_AI_ASSISTANT_INSTALLING="🔧 Installation de bash-ai..."
+  LANG_MSG_AI_ASSISTANT_CANCEL="⚠️ Installation de bash-ai annulée"
 else
   LANG_MSG_SCRIPT_RELAUNCH="🔄 Relaunching script using Bash..."
   LANG_MSG_INSTALLING="🔧 Installing"
@@ -36,6 +39,9 @@ else
   LANG_MSG_SETUP_COMPLETE="🎉 Environment setup completed."
   LANG_MSG_BASHIT_CONFIG="💡 To configure Bash-it, type 'bash-it show aliases' and 'bash-it show plugins' after terminal restart"
   LANG_MSG_BASHIT_ERROR="⚠️ Bash-it was not found in the expected path."
+  LANG_MSG_AI_ASSISTANT_PROMPT="Would you like to install bash-ai, an AI assistant for your terminal? It offers a natural language interface and plugin system (y/N)"
+  LANG_MSG_AI_ASSISTANT_INSTALLING="🔧 Installing bash-ai..."
+  LANG_MSG_AI_ASSISTANT_CANCEL="⚠️ bash-ai installation cancelled"
 fi
 
 # Donne les droits d'exécution au script
@@ -47,18 +53,25 @@ if [ -z "$BASH_VERSION" ]; then
   exec bash "$0"
 fi
 
-backup_bashrc() {
-  if [ -f ~/.bashrc ]; then
-    cp ~/.bashrc ~/.bashrc.backup_$(date +%Y%m%d_%H%M%S)
+install_if_missing() {
+  local package=$1
+  if ! command -v "$package" &>/dev/null && ! brew list "$package" &>/dev/null; then
+    echo "$LANG_MSG_INSTALLING $package..."
+    brew install "$package"
+    if [ $? -eq 0 ]; then
+      echo "✅ $package $LANG_MSG_INSTALLED"
+    else
+      echo "❌ Erreur lors de l'installation de $package"
+      return 1
+    fi
+  else
+    echo "✅ $package est déjà installé"
   fi
 }
 
-version_ge() {
-  local ver1=$1 ver2=$2
-  if [[ "$(printf '%s\n%s\n' "$ver2" "$ver1" | sort -V | head -n1)" == "$ver2" ]]; then
-    return 0
-  else
-    return 1
+backup_bashrc() {
+  if [ -f ~/.bashrc ]; then
+    cp ~/.bashrc ~/.bashrc.backup_$(date +%Y%m%d_%H%M%S)
   fi
 }
 
@@ -99,90 +112,68 @@ fi
 # Création/Sauvegarde du .bashrc
 backup_bashrc
 
-# Configuration de base Bash-it
+# Configuration de base Bash-it et outils
 {
+  # Configuration de base
   echo 'export BASH_IT="$HOME/.bash_it"'
   echo 'export BASH_IT_THEME="powerline-multiline"'
-  echo 'source "$BASH_IT/bash_it.sh"'
-} > ~/.bashrc
-
-### MISE À JOUR DE BREW
-echo "$LANG_MSG_BREW_UPDATE"
-brew update
-
-### INSTALLATION DE PAQUETS via Brew
-install_or_upgrade_brew_package_latest() {
-  local pkg=$1
-  local min_version=$2
-  echo "🔄 Vérification de $pkg..."
-  if brew list --versions "$pkg" &>/dev/null; then
-    local installed_version
-    installed_version=$(brew list --versions "$pkg" | awk '{print $2}')
-    local latest_version
-    latest_version=$(brew info --json=v1 "$pkg" | jq -r '.[0].versions.stable')
-    if version_ge "$installed_version" "$latest_version"; then
-      printf "$LANG_MSG_ALREADY_INSTALLED\n" "$installed_version" "$latest_version"
-      return
-    else
-      echo "$LANG_MSG_UPDATING $pkg ($installed_version → $latest_version)..."
-      brew upgrade "$pkg"
-      echo "✅ $pkg $LANG_MSG_UPDATED"
-      return
-    fi
-  else
-    echo "$LANG_MSG_INSTALLING $pkg..."
-    brew install "$pkg"
-    echo "✅ $pkg $LANG_MSG_INSTALLED"
+  
+  # Homebrew PATH (doit être avant tout le reste)
+  echo '# Homebrew PATH configuration'
+  if [[ -d ~/.linuxbrew ]]; then
+    echo 'eval "$(~/.linuxbrew/bin/brew shellenv)"'
+  elif [[ -d /home/linuxbrew/.linuxbrew ]]; then
+    echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"'
   fi
-}
-
-# Installation des paquets avec leurs versions minimales
-echo "🔄 Installation des outils..."
-install_or_upgrade_brew_package_latest "eza" "0.10.0"
-install_or_upgrade_brew_package_latest "atuin" "0.1.0"
-install_or_upgrade_brew_package_latest "fzf" "0.38.0"
-install_or_upgrade_brew_package_latest "direnv" "2.32.0"
-install_or_upgrade_brew_package_latest "pinentry" "1.1.0"
-install_or_upgrade_brew_package_latest "gnupg" "2.3.0"
-echo "✅ Installation des outils terminée"
-
-# Configuration dans ~/.bashrc
-echo "🔄 Configuration des alias..."
-if ! grep -q 'alias ls=' ~/.bashrc; then
-  {
-    echo '# Alias eza'
-    echo 'alias ls="eza -a --icons"'
-    echo 'alias ll="eza -1a --icons"'
-    echo 'alias ld="ll"'
-    echo 'alias la="eza -lagh --icons"'
-    echo 'alias lt="eza -a --tree --icons --level=2"'
-    echo 'alias ltf="eza -a --tree --icons"'
-    echo 'alias lat="eza -lagh --tree --icons"'
-  } >> ~/.bashrc
-fi
-echo "✅ Configuration des alias terminée"
-
-# Configuration des outils
-echo "🔄 Configuration des outils..."
-{
-  # Atuin
-  echo 'eval "$(atuin init bash)"'
+  
+  # Source Bash-it
+  echo 'source "$BASH_IT/bash_it.sh"'
+  
+  # Configurations des outils avec vérification de leur existence
+  echo '# Tool configurations'
+  echo 'command -v atuin >/dev/null 2>&1 && eval "$(atuin init bash)"'
+  
+  echo 'command -v direnv >/dev/null 2>&1 && eval "$(direnv hook bash)"'
+  
+  echo 'if command -v gpgconf >/dev/null 2>&1; then'
+  echo '  export GPG_TTY="$(tty)"'
+  echo '  export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"'
+  echo '  gpgconf --launch gpg-agent 2>/dev/null'
+  echo 'fi'
+  
+  # Alias eza avec vérification
+  echo 'if command -v eza >/dev/null 2>&1; then'
+  echo '  alias ls="eza -a --icons"'
+  echo '  alias ll="eza -1a --icons"'
+  echo '  alias ld="ll"'
+  echo '  alias la="eza -lagh --icons"'
+  echo '  alias lt="eza -a --tree --icons --level=2"'
+  echo '  alias ltf="eza -a --tree --icons"'
+  echo '  alias lat="eza -lagh --tree --icons"'
+  echo 'fi'
   
   # FZF
   echo '[ -f ~/.fzf.bash ] && source ~/.fzf.bash'
-  
-  # Direnv
-  echo 'eval "$(direnv hook bash)"'
-  
-  # GPG/YubiKey
-  echo '# YubiKey + GPG config'
-  echo 'export GPG_TTY=$(tty)'
-  if command -v gpgconf &>/dev/null; then
-    echo 'export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)'
-    echo 'gpgconf --launch gpg-agent'
-  fi
-} >> ~/.bashrc
-echo "✅ Configuration des outils terminée"
+} > ~/.bashrc
+
+### INSTALLATION DES OUTILS
+echo "🔄 Installation des outils..."
+install_if_missing "eza"
+install_if_missing "atuin"
+install_if_missing "fzf"
+install_if_missing "direnv"
+install_if_missing "pinentry"
+install_if_missing "gnupg"
+
+### INSTALLATION DE BASH-AI
+echo "$LANG_MSG_AI_ASSISTANT_PROMPT"
+read -r answer
+if [[ "$LANG" == fr_* && "$answer" =~ ^[oO]$ ]] || [[ "$LANG" != fr_* && "$answer" =~ ^[yY]$ ]]; then
+    echo "$LANG_MSG_AI_ASSISTANT_INSTALLING"
+    curl -sS https://raw.githubusercontent.com/hezkore/bash-ai/main/install.sh | bash
+else
+    echo "$LANG_MSG_AI_ASSISTANT_CANCEL"
+fi
 
 ### INSTALLATION DU SCRIPT D'ALIAS POUR PYTHON PACKAGE
 echo "$LANG_MSG_PUBLISH_INSTALL"
@@ -203,5 +194,13 @@ fi
 echo "$LANG_MSG_SETUP_COMPLETE"
 echo "$LANG_MSG_BASHIT_CONFIG"
 
-# Rechargement de la configuration
-exec bash
+# Ajout des messages pour le rechargement
+if [[ "$LANG" == fr_* ]]; then
+  echo "💡 Pour appliquer les changements, vous pouvez :"
+  echo "   - Soit ouvrir un nouveau terminal"
+  echo "   - Soit taper 'source ~/.bashrc' dans le terminal actuel"
+else
+  echo "💡 To apply changes, you can either:"
+  echo "   - Open a new terminal"
+  echo "   - Type 'source ~/.bashrc' in the current terminal"
+fi
