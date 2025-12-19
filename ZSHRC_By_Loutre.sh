@@ -1,3 +1,5 @@
+#!/usr/bin/env zsh
+
 # ZSHRC By Loutre, inspired from PAPAMICA
 # Environement : MACOS
 
@@ -51,10 +53,9 @@ fi
 
 install_if_missing() {
   local package=$1
-  if ! command -v "$package" &>/dev/null && ! brew list "$package" &>/dev/null; then
+  if ! command -v "$package" &>/dev/null && ! brew list "$package" &>/dev/null 2>&1; then
     echo "$LANG_MSG_INSTALLING $package..."
-    brew install "$package"
-    if [ $? -eq 0 ]; then
+    if brew install "$package"; then
       echo "✅ $package $LANG_MSG_INSTALLED"
     else
       echo "❌ Erreur lors de l'installation de $package"
@@ -66,8 +67,8 @@ install_if_missing() {
 }
 
 backup_zshrc() {
-  if [ -f ~/.zshrc ]; then
-    cp ~/.zshrc ~/.zshrc.backup_$(date +%Y%m%d_%H%M%S)
+  if [ -f "$HOME/.zshrc" ]; then
+    cp "$HOME/.zshrc" "$HOME/.zshrc.backup_$(date +%Y%m%d_%H%M%S)"
   fi
 }
 
@@ -80,11 +81,11 @@ if ! command -v brew &>/dev/null; then
   if [[ -f /opt/homebrew/bin/brew ]]; then
     # Pour Apple Silicon (M1/M2)
     eval "$(/opt/homebrew/bin/brew shellenv)"
-    echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zshrc
+    echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$HOME/.zshrc"
   elif [[ -f /usr/local/bin/brew ]]; then
     # Pour Intel Mac
     eval "$(/usr/local/bin/brew shellenv)"
-    echo 'eval "$(/usr/local/bin/brew shellenv)"' >> ~/.zshrc
+    echo 'eval "$(/usr/local/bin/brew shellenv)"' >> "$HOME/.zshrc"
   fi
   
   echo "✅ Homebrew $LANG_MSG_INSTALLED"
@@ -98,10 +99,13 @@ if [ ! -d "/Applications/iTerm.app" ]; then
     
     # Installation du thème Dracula
     echo "$LANG_MSG_ITERM_THEME"
-    mkdir -p ~/.iterm2/themes
-    curl -L "https://raw.githubusercontent.com/dracula/iterm/master/Dracula.itermcolors" -o ~/.iterm2/themes/Dracula.itermcolors
-    echo "$LANG_MSG_ITERM_THEME_SUCCESS"
-    echo -e "$LANG_MSG_ITERM_THEME_STEPS"
+    mkdir -p "$HOME/.iterm2/themes"
+    if curl -L "https://raw.githubusercontent.com/dracula/iterm/master/Dracula.itermcolors" -o "$HOME/.iterm2/themes/Dracula.itermcolors"; then
+      echo "$LANG_MSG_ITERM_THEME_SUCCESS"
+      echo -e "$LANG_MSG_ITERM_THEME_STEPS"
+    else
+      echo "⚠️ Erreur lors du téléchargement du thème Dracula"
+    fi
 fi
 
 ### INSTALLATION DU PLUGIN AI ITERM2
@@ -141,22 +145,31 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   # zsh-autosuggestions
   if [ ! -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ]; then
     echo "$LANG_MSG_INSTALLING zsh-autosuggestions..."
-    git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
-    echo "✅ zsh-autosuggestions $LANG_MSG_INSTALLED"
+    if git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"; then
+      echo "✅ zsh-autosuggestions $LANG_MSG_INSTALLED"
+    else
+      echo "⚠️ Erreur lors de l'installation de zsh-autosuggestions"
+    fi
   fi
 
   # zsh-syntax-highlighting
   if [ ! -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ]; then
     echo "$LANG_MSG_INSTALLING zsh-syntax-highlighting..."
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
-    echo "✅ zsh-syntax-highlighting $LANG_MSG_INSTALLED"
+    if git clone https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"; then
+      echo "✅ zsh-syntax-highlighting $LANG_MSG_INSTALLED"
+    else
+      echo "⚠️ Erreur lors de l'installation de zsh-syntax-highlighting"
+    fi
   fi
 
   # zsh-completions
   if [ ! -d "$ZSH_CUSTOM/plugins/zsh-completions" ]; then
     echo "$LANG_MSG_INSTALLING zsh-completions..."
-    git clone https://github.com/zsh-users/zsh-completions "$ZSH_CUSTOM/plugins/zsh-completions"
-    echo "✅ zsh-completions $LANG_MSG_INSTALLED"
+    if git clone https://github.com/zsh-users/zsh-completions "$ZSH_CUSTOM/plugins/zsh-completions"; then
+      echo "✅ zsh-completions $LANG_MSG_INSTALLED"
+    else
+      echo "⚠️ Erreur lors de l'installation de zsh-completions"
+    fi
   fi
 
   # Création/Sauvegarde du .zshrc
@@ -230,14 +243,13 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
     echo '  alias ltf="eza -a --tree --icons"'
     echo '  alias lat="eza -lagh --tree --icons"'
     echo 'fi'
-  } > ~/.zshrc
+  } > "$HOME/.zshrc"
 
   echo "$LANG_MSG_POWERLEVEL_CONFIG"
 
   ### INSTALLATION ATUIN
   echo "🔄 Installation d'Atuin..."
-  install_if_missing atuin
-  if [[ $? -eq 0 ]]; then
+  if install_if_missing atuin; then
     if [[ $- == *i* ]]; then
       eval "$(atuin init zsh)"
     fi
@@ -250,22 +262,41 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   done
   echo "✅ Installation des outils de cryptographie terminée"
 
+  ### CONFIGURATION GPG-AGENT POUR YUBIKEY
+  echo "🔐 Configuration de GPG-agent pour YubiKey..."
+  mkdir -p ~/.gnupg
+  chmod 700 ~/.gnupg
+
+  # Déployer la configuration gpg-agent pour macOS
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  if [ -f "$SCRIPT_DIR/config/gpg-agent.conf" ]; then
+    cp "$SCRIPT_DIR/config/gpg-agent.conf" ~/.gnupg/gpg-agent.conf
+    chmod 600 ~/.gnupg/gpg-agent.conf
+    echo "✅ Configuration GPG-agent déployée"
+    
+    # Redémarrer gpg-agent pour appliquer la config
+    gpgconf --kill gpg-agent 2>/dev/null || true
+    gpgconf --launch gpg-agent 2>/dev/null || true
+  else
+    echo "⚠️ Fichier de configuration gpg-agent.conf non trouvé"
+  fi
+
   ### INSTALLATION EZA
   echo "🔄 Installation d'Eza..."
   install_if_missing eza
-
-  # Ajout des alias eza
-  {
-    echo '# Alias eza'
-    echo 'alias ls="eza -a --icons"'
-    echo 'alias ll="eza -1a --icons"'
-    echo 'alias ld="ll"'
-    echo 'alias la="eza -lagh --icons"'
-    echo 'alias lt="eza -a --tree --icons --level=2"'
-    echo 'alias ltf="eza -a --tree --icons"'
-    echo 'alias lat="eza -lagh --tree --icons"'
-  } >> ~/.zshrc
   echo "✅ Configuration d'Eza terminée"
+
+  ### INSTALLATION DE PYTHON-DEV-TOOLKIT
+  if ! pip3 show devtools-claravnk &>/dev/null; then
+    echo "🔧 Installation de python-dev-toolkit..."
+    if pip3 install --break-system-packages devtools-claravnk[dev]; then
+      echo "✅ python-dev-toolkit installé avec succès (black, isort, flake8, bandit)"
+    else
+      echo "⚠️ Erreur lors de l'installation de python-dev-toolkit"
+    fi
+  else
+    echo "✅ python-dev-toolkit déjà installé"
+  fi
 
   ### INSTALLATION DU SCRIPT D'ALIAS POUR PYTHON PACKAGE
   echo "$LANG_MSG_PUBLISH_INSTALL"
@@ -286,12 +317,76 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
   
   # Ajout des messages pour le rechargement
   if [[ "$LANG" == fr_* ]]; then
-    echo "💡 Pour appliquer les changements, vous pouvez :"
-    echo "   - Soit ouvrir un nouveau terminal"
-    echo "   - Soit taper 'source ~/.zshrc' dans le terminal actuel"
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "🎯 PROCHAINES ÉTAPES - Configuration de votre espace de travail"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "1️⃣  Recharger votre configuration :"
+    echo "    source ~/.zshrc"
+    echo ""
+    echo "2️⃣  Configurer Powerlevel10k (prompt personnalisé) :"
+    echo "    p10k configure"
+    echo ""
+    echo "3️⃣  Configurer Atuin (historique synchronisé) :"
+    echo "    atuin register -u <votre-email> -p <mot-de-passe>"
+    echo "    atuin login -u <votre-email> -p <mot-de-passe>"
+    echo "    atuin sync"
+    echo ""
+    echo "4️⃣  Configurer GPG/YubiKey :"
+    echo "    gpg --card-status     # Vérifier la YubiKey"
+    echo "    gpg --edit-card       # Configurer la carte"
+    echo ""
+    echo "5️⃣  Tester les outils installés :"
+    echo "    eza -la               # Lister les fichiers avec style"
+    echo "    fzf                   # Recherche floue interactive"
+    echo ""
+    echo "6️⃣  Outils Python disponibles :"
+    echo "    black <fichier.py>    # Formater le code"
+    echo "    isort <fichier.py>    # Trier les imports"
+    echo "    flake8 <fichier.py>   # Linter"
+    echo "    bandit <fichier.py>   # Analyse de sécurité"
+    echo ""
+    echo "7️⃣  Importer le thème Dracula dans iTerm2 :"
+    echo "    Preferences > Profiles > Colors > Import..."
+    echo "    Fichier : ~/.iterm2/themes/Dracula.itermcolors"
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   else
-    echo "💡 To apply changes, you can either:"
-    echo "   - Open a new terminal"
-    echo "   - Type 'source ~/.zshrc' in the current terminal"
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "🎯 NEXT STEPS - Configure your workspace"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "1️⃣  Reload your configuration:"
+    echo "    source ~/.zshrc"
+    echo ""
+    echo "2️⃣  Configure Powerlevel10k (custom prompt):"
+    echo "    p10k configure"
+    echo ""
+    echo "3️⃣  Configure Atuin (synced history):"
+    echo "    atuin register -u <your-email> -p <password>"
+    echo "    atuin login -u <your-email> -p <password>"
+    echo "    atuin sync"
+    echo ""
+    echo "4️⃣  Configure GPG/YubiKey:"
+    echo "    gpg --card-status     # Check YubiKey"
+    echo "    gpg --edit-card       # Configure card"
+    echo ""
+    echo "5️⃣  Test installed tools:"
+    echo "    eza -la               # List files with style"
+    echo "    fzf                   # Interactive fuzzy finder"
+    echo ""
+    echo "6️⃣  Python tools available:"
+    echo "    black <file.py>       # Format code"
+    echo "    isort <file.py>       # Sort imports"
+    echo "    flake8 <file.py>      # Linter"
+    echo "    bandit <file.py>      # Security analysis"
+    echo ""
+    echo "7️⃣  Import Dracula theme in iTerm2:"
+    echo "    Preferences > Profiles > Colors > Import..."
+    echo "    File: ~/.iterm2/themes/Dracula.itermcolors"
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   fi
 fi

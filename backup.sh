@@ -3,7 +3,8 @@
 set -e
 
 # Variables
-backup_dir="$HOME/migration_backup_$(date +%Y%m%d_%H%M%S)"
+timestamp="$(date +%Y%m%d_%H%M%S)"
+backup_dir="$HOME/migration_backup_$timestamp"
 mkdir -p "$backup_dir"
 echo "📁 Backup directory created at $backup_dir"
 
@@ -57,7 +58,7 @@ git config --global --list > "$backup_dir/git_global_config.txt"
 echo "✔️  Git global config saved."
 
 # 7. Archiver le dossier de backup
-archive_file="$HOME/migration_backup_$(date +%Y%m%d_%H%M%S).tar.gz"
+archive_file="$HOME/migration_backup_$timestamp.tar.gz"
 tar -czvf "$archive_file" -C "$backup_dir" .
 echo "📦 Backup archive created at $archive_file"
 

@@ -77,8 +77,14 @@ fi
 # 7. Restaurer la config git globale
 if [ -f "$restore_dir/git_global_config.txt" ]; then
   echo "🔧 Restoring git global config..."
-  while IFS= read -r line; do
-    git config --global $(echo "$line" | sed 's/= / /')
+  while IFS='=' read -r key value; do
+    # Skip empty lines and comments
+    [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
+    # Trim whitespace from key and value
+    key=$(echo "$key" | xargs)
+    value=$(echo "$value" | xargs)
+    # Set git config with proper quoting
+    git config --global "$key" "$value"
   done < "$restore_dir/git_global_config.txt"
   echo "✔️ Git global config restored."
 fi

@@ -15,14 +15,7 @@ if [[ "$LANG" == fr_* ]]; then
   LANG_MSG_APT_INSTALL="🔧 Installation des paquets manquants via apt..."
   LANG_MSG_APT_SUCCESS="✅ Paquets installés via apt."
   LANG_MSG_BREW_UPDATE="🔄 Mise à jour des paquets Homebrew..."
-  LANG_MSG_PUBLISH_INSTALL="Souhaites-tu installer le script publish_py pour automatiser la publication de paquets Python ? (o/N)"
-  LANG_MSG_PUBLISH_CANCEL="⚠️ Installation du script publish_py annulée."
   LANG_MSG_SETUP_COMPLETE="🎉 Configuration de l'environnement terminée."
-  LANG_MSG_BASHIT_CONFIG="💡 Pour configurer Bash-it, tapez 'bash-it show aliases' et 'bash-it show plugins' après le redémarrage du terminal"
-  LANG_MSG_BASHIT_ERROR="⚠️ Bash-it n'a pas été trouvé dans le chemin attendu."
-  LANG_MSG_AI_ASSISTANT_PROMPT="Souhaitez-vous installer bash-ai, un assistant AI pour votre terminal ? Il offre une interface en langage naturel et un système de plugins (o/N)"
-  LANG_MSG_AI_ASSISTANT_INSTALLING="🔧 Installation de bash-ai..."
-  LANG_MSG_AI_ASSISTANT_CANCEL="⚠️ Installation de bash-ai annulée"
 else
   LANG_MSG_SCRIPT_RELAUNCH="🔄 Relaunching script using Bash..."
   LANG_MSG_INSTALLING="🔧 Installing"
@@ -34,14 +27,7 @@ else
   LANG_MSG_APT_INSTALL="🔧 Installing missing packages via apt..."
   LANG_MSG_APT_SUCCESS="✅ Packages installed via apt."
   LANG_MSG_BREW_UPDATE="🔄 Updating Homebrew packages..."
-  LANG_MSG_PUBLISH_INSTALL="Do you want to install the publish_py script to automate Python package publishing? (y/N)"
-  LANG_MSG_PUBLISH_CANCEL="⚠️ publish_py script installation cancelled."
   LANG_MSG_SETUP_COMPLETE="🎉 Environment setup completed."
-  LANG_MSG_BASHIT_CONFIG="💡 To configure Bash-it, type 'bash-it show aliases' and 'bash-it show plugins' after terminal restart"
-  LANG_MSG_BASHIT_ERROR="⚠️ Bash-it was not found in the expected path."
-  LANG_MSG_AI_ASSISTANT_PROMPT="Would you like to install bash-ai, an AI assistant for your terminal? It offers a natural language interface and plugin system (y/N)"
-  LANG_MSG_AI_ASSISTANT_INSTALLING="🔧 Installing bash-ai..."
-  LANG_MSG_AI_ASSISTANT_CANCEL="⚠️ bash-ai installation cancelled"
 fi
 
 # Donne les droits d'exécution au script
@@ -55,10 +41,9 @@ fi
 
 install_if_missing() {
   local package=$1
-  if ! command -v "$package" &>/dev/null && ! brew list "$package" &>/dev/null; then
+  if ! command -v "$package" &>/dev/null && ! brew list "$package" &>/dev/null 2>&1; then
     echo "$LANG_MSG_INSTALLING $package..."
-    brew install "$package"
-    if [ $? -eq 0 ]; then
+    if brew install "$package"; then
       echo "✅ $package $LANG_MSG_INSTALLED"
     else
       echo "❌ Erreur lors de l'installation de $package"
@@ -70,78 +55,69 @@ install_if_missing() {
 }
 
 backup_bashrc() {
-  if [ -f ~/.bashrc ]; then
-    cp ~/.bashrc ~/.bashrc.backup_$(date +%Y%m%d_%H%M%S)
+  if [ -f "$HOME/.bashrc" ]; then
+    cp "$HOME/.bashrc" "$HOME/.bashrc.backup_$(date +%Y%m%d_%H%M%S)"
   fi
 }
 
-### INSTALLATION DE HOMEBREW (Linuxbrew) SI ABSENT
+### DÉTECTION DU GESTIONNAIRE DE PAQUETS
+USE_APT=false
 if ! command -v brew &>/dev/null; then
-  echo "$LANG_MSG_HOMEBREW_NOT_FOUND"
   if command -v apt &>/dev/null; then
     echo "$LANG_MSG_APT_INSTALL"
     sudo apt update
-    sudo apt install -y eza atuin fzf direnv pinentry-tty gnupg jq
+    sudo apt install -y eza atuin fzf direnv gnupg jq bash-completion neofetch
     echo "$LANG_MSG_APT_SUCCESS"
-    exit 0
+    USE_APT=true
   else
+    echo "$LANG_MSG_HOMEBREW_NOT_FOUND"
     echo "$LANG_MSG_INSTALLING Homebrew (Linuxbrew)..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     
     # Configuration du PATH pour Homebrew
-    if [[ -d ~/.linuxbrew ]]; then
-      eval "$(~/.linuxbrew/bin/brew shellenv)"
-      echo 'eval "$(~/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
+    if [[ -d "$HOME/.linuxbrew" ]]; then
+      eval "$("$HOME/.linuxbrew/bin/brew" shellenv)"
+      echo 'eval "$(~/.linuxbrew/bin/brew shellenv)"' >> "$HOME/.bashrc"
     elif [[ -d /home/linuxbrew/.linuxbrew ]]; then
       eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-      echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
+      echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> "$HOME/.bashrc"
     fi
     
     echo "✅ Homebrew $LANG_MSG_INSTALLED"
   fi
 fi
 
-### INSTALLATION DE BASH-IT
-if [ ! -d "$HOME/.bash_it" ]; then
-  echo "$LANG_MSG_INSTALLING Bash-it..."
-  git clone --depth=1 https://github.com/Bash-it/bash-it.git ~/.bash_it
-  ~/.bash_it/install.sh --silent
-  echo "✅ Bash-it $LANG_MSG_INSTALLED"
-fi
-
 # Création/Sauvegarde du .bashrc
 backup_bashrc
 
-# Configuration de base Bash-it et outils
+# Configuration lightweight pour serveurs distants
 {
-  # Configuration de base
-  echo 'export BASH_IT="$HOME/.bash_it"'
-  echo 'export BASH_IT_THEME="powerline-multiline"'
-  
-  # Homebrew PATH (doit être avant tout le reste)
+  # Homebrew PATH (si utilisé)
   echo '# Homebrew PATH configuration'
-  if [[ -d ~/.linuxbrew ]]; then
+  if [[ -d "$HOME/.linuxbrew" ]]; then
     echo 'eval "$(~/.linuxbrew/bin/brew shellenv)"'
   elif [[ -d /home/linuxbrew/.linuxbrew ]]; then
     echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"'
   fi
   
-  # Source Bash-it
-  echo 'source "$BASH_IT/bash_it.sh"'
+  # Prompt simple et efficace
+  echo 'export PS1="\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "'
   
-  # Configurations des outils avec vérification de leur existence
+  # Bash completion
+  echo '# Enable bash completion'
+  echo 'if [ -f /etc/bash_completion ]; then'
+  echo '  . /etc/bash_completion'
+  echo 'elif [ -f /usr/share/bash-completion/bash_completion ]; then'
+  echo '  . /usr/share/bash-completion/bash_completion'
+  echo 'fi'
+  echo ''
+  
+  # Configurations des outils essentiels
   echo '# Tool configurations'
   echo 'command -v atuin >/dev/null 2>&1 && eval "$(atuin init bash)"'
-  
   echo 'command -v direnv >/dev/null 2>&1 && eval "$(direnv hook bash)"'
   
-  echo 'if command -v gpgconf >/dev/null 2>&1; then'
-  echo '  export GPG_TTY="$(tty)"'
-  echo '  export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"'
-  echo '  gpgconf --launch gpg-agent 2>/dev/null'
-  echo 'fi'
-  
-  # Alias eza avec vérification
+  # Alias eza
   echo 'if command -v eza >/dev/null 2>&1; then'
   echo '  alias ls="eza -a --icons"'
   echo '  alias ll="eza -1a --icons"'
@@ -154,53 +130,92 @@ backup_bashrc
   
   # FZF
   echo '[ -f ~/.fzf.bash ] && source ~/.fzf.bash'
+  
+  # Historique amélioré
+  echo 'export HISTSIZE=10000'
+  echo 'export HISTFILESIZE=20000'
+  echo 'export HISTCONTROL=ignoredups:erasedups'
+  echo 'shopt -s histappend'
 } > ~/.bashrc
 
-### INSTALLATION DES OUTILS
-echo "🔄 Installation des outils..."
-install_if_missing "eza"
-install_if_missing "atuin"
-install_if_missing "fzf"
-install_if_missing "direnv"
-install_if_missing "pinentry"
-install_if_missing "gnupg"
-
-### INSTALLATION DE BASH-AI
-echo "$LANG_MSG_AI_ASSISTANT_PROMPT"
-read -r answer
-if [[ "$LANG" == fr_* && "$answer" =~ ^[oO]$ ]] || [[ "$LANG" != fr_* && "$answer" =~ ^[yY]$ ]]; then
-    echo "$LANG_MSG_AI_ASSISTANT_INSTALLING"
-    curl -sS https://raw.githubusercontent.com/hezkore/bash-ai/main/install.sh | bash
+### INSTALLATION DES OUTILS (si pas déjà installés via apt)
+if [ "$USE_APT" = false ]; then
+  echo "🔄 Installation des outils via Homebrew..."
+  install_if_missing "eza"
+  install_if_missing "atuin"
+  install_if_missing "fzf"
+  install_if_missing "direnv"
+  install_if_missing "gnupg"
+  install_if_missing "neofetch"
 else
-    echo "$LANG_MSG_AI_ASSISTANT_CANCEL"
+  echo "✅ Outils déjà installés via apt"
 fi
 
-### INSTALLATION DU SCRIPT D'ALIAS POUR PYTHON PACKAGE
-echo "$LANG_MSG_PUBLISH_INSTALL"
-read -r answer
-if [[ "$LANG" == fr_* && "$answer" =~ ^[oO]$ ]] || [[ "$LANG" != fr_* && "$answer" =~ ^[yY]$ ]]; then
-  echo "$LANG_MSG_INSTALLING publish_py..."
-  tmpfile=$(mktemp)
-  curl -L -o "$tmpfile" https://raw.githubusercontent.com/ClaraVnk/python-package/main/install_publish_alias.sh
-  chmod +x "$tmpfile"
-  "$tmpfile"
-  rm -f "$tmpfile"
-  source ~/.bashrc
-  echo "✅ publishpy $LANG_MSG_INSTALLED"
+### INSTALLATION DE PYTHON-DEV-TOOLKIT
+if ! pip3 show devtools-claravnk &>/dev/null; then
+  echo "🔧 Installation de python-dev-toolkit..."
+  if pip3 install --break-system-packages devtools-claravnk[dev]; then
+    echo "✅ python-dev-toolkit installé avec succès (black, isort, flake8, bandit)"
+  else
+    echo "⚠️ Erreur lors de l'installation de python-dev-toolkit"
+  fi
 else
-  echo "$LANG_MSG_PUBLISH_CANCEL"
+  echo "✅ python-dev-toolkit déjà installé"
 fi
 
 echo "$LANG_MSG_SETUP_COMPLETE"
-echo "$LANG_MSG_BASHIT_CONFIG"
 
 # Ajout des messages pour le rechargement
 if [[ "$LANG" == fr_* ]]; then
-  echo "💡 Pour appliquer les changements, vous pouvez :"
-  echo "   - Soit ouvrir un nouveau terminal"
-  echo "   - Soit taper 'source ~/.bashrc' dans le terminal actuel"
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🎯 PROCHAINES ÉTAPES - Configuration de votre espace de travail"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "1️⃣  Recharger votre configuration :"
+  echo "    source ~/.bashrc"
+  echo ""
+  echo "2️⃣  Configurer Atuin (historique synchronisé) :"
+  echo "    atuin register -u <votre-email> -p <mot-de-passe>"
+  echo "    atuin login -u <votre-email> -p <mot-de-passe>"
+  echo "    atuin sync"
+  echo ""
+  echo "3️⃣  Tester les outils installés :"
+  echo "    neofetch              # Afficher les infos système"
+  echo "    eza -la               # Lister les fichiers avec style"
+  echo "    fzf                   # Recherche floue interactive"
+  echo ""
+  echo "4️⃣  Outils Python disponibles :"
+  echo "    black <fichier.py>    # Formater le code"
+  echo "    isort <fichier.py>    # Trier les imports"
+  echo "    flake8 <fichier.py>   # Linter"
+  echo "    bandit <fichier.py>   # Analyse de sécurité"
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 else
-  echo "💡 To apply changes, you can either:"
-  echo "   - Open a new terminal"
-  echo "   - Type 'source ~/.bashrc' in the current terminal"
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🎯 NEXT STEPS - Configure your workspace"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "1️⃣  Reload your configuration:"
+  echo "    source ~/.bashrc"
+  echo ""
+  echo "2️⃣  Configure Atuin (synced history):"
+  echo "    atuin register -u <your-email> -p <password>"
+  echo "    atuin login -u <your-email> -p <password>"
+  echo "    atuin sync"
+  echo ""
+  echo "3️⃣  Test installed tools:"
+  echo "    neofetch              # Display system info"
+  echo "    eza -la               # List files with style"
+  echo "    fzf                   # Interactive fuzzy finder"
+  echo ""
+  echo "4️⃣  Python tools available:"
+  echo "    black <file.py>       # Format code"
+  echo "    isort <file.py>       # Sort imports"
+  echo "    flake8 <file.py>      # Linter"
+  echo "    bandit <file.py>      # Security analysis"
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 fi
