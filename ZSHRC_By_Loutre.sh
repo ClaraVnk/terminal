@@ -1,13 +1,15 @@
 #!/usr/bin/env zsh
 
 # ZSHRC By Loutre, inspired from PAPAMICA
-# Environement : MACOS
+# Environment: macOS
 
-# Détection de la langue du système
+# Language detection
 if [[ "$LANG" == fr_* ]]; then
   LANG_MSG_SCRIPT_RELAUNCH="🔄 Relance du script en utilisant Zsh..."
   LANG_MSG_INSTALLING="🔧 Installation de"
   LANG_MSG_INSTALLED="✅ installé avec succès."
+  LANG_MSG_ALREADY_INSTALLED="déjà installé"
+  LANG_MSG_INSTALL_ERROR="❌ Échec de l'installation de"
   LANG_MSG_POWERLEVEL_CONFIG="💡 Pour configurer Powerlevel10k, tapez 'p10k configure' après le redémarrage du terminal"
   LANG_MSG_POWERLEVEL_ERROR="⚠️ Le thème Powerlevel10k n'a pas été trouvé dans le chemin attendu."
   LANG_MSG_PUBLISH_INSTALL="Souhaites-tu installer le script publish_py pour automatiser la publication de paquets Python ? (o/N)"
@@ -26,6 +28,8 @@ else
   LANG_MSG_SCRIPT_RELAUNCH="🔄 Relaunching script using Zsh..."
   LANG_MSG_INSTALLING="🔧 Installing"
   LANG_MSG_INSTALLED="✅ successfully installed."
+  LANG_MSG_ALREADY_INSTALLED="already installed"
+  LANG_MSG_INSTALL_ERROR="❌ Failed to install"
   LANG_MSG_POWERLEVEL_CONFIG="💡 To configure Powerlevel10k, type 'p10k configure' after terminal restart"
   LANG_MSG_POWERLEVEL_ERROR="⚠️ Powerlevel10k theme was not found in the expected path."
   LANG_MSG_PUBLISH_INSTALL="Do you want to install the publish_py script to automate Python package publishing? (y/N)"
@@ -42,27 +46,24 @@ else
   LANG_MSG_ITERM_THEME_STEPS="💡 To activate Dracula theme in iTerm2:\n   1. Open iTerm2 preferences (⌘,)\n   2. Go to 'Profiles' > 'Colors'\n   3. Click on 'Color Presets...' > 'Import...'\n   4. Select the file: ~/.iterm2/themes/Dracula.itermcolors\n   5. Select 'Dracula' from 'Color Presets...'"
 fi
 
-# Donne les droits d'exécution au script
-chmod +x "$0"
-
-# Ensure the script is running under Zsh
+# Re-exec under Zsh if needed
 if [ -z "$ZSH_VERSION" ]; then
   echo "$LANG_MSG_SCRIPT_RELAUNCH"
-  exec zsh "$0"
+  exec zsh "$0" "$@"
 fi
 
 install_if_missing() {
   local package=$1
-  if ! command -v "$package" &>/dev/null && ! brew list "$package" &>/dev/null 2>&1; then
-    echo "$LANG_MSG_INSTALLING $package..."
-    if brew install "$package"; then
-      echo "✅ $package $LANG_MSG_INSTALLED"
-    else
-      echo "❌ Erreur lors de l'installation de $package"
-      return 1
-    fi
+  if command -v "$package" &>/dev/null; then
+    echo "✅ $package $LANG_MSG_ALREADY_INSTALLED"
+    return 0
+  fi
+  echo "$LANG_MSG_INSTALLING $package..."
+  if brew install "$package"; then
+    echo "✅ $package $LANG_MSG_INSTALLED"
   else
-    echo "✅ $package est déjà installé"
+    echo "$LANG_MSG_INSTALL_ERROR $package"
+    return 1
   fi
 }
 
@@ -72,168 +73,128 @@ backup_zshrc() {
   fi
 }
 
-### INSTALLATION DE HOMEBREW SI ABSENT
+confirm() {
+  local answer
+  read -r "answer?$1 "
+  if [[ "$LANG" == fr_* ]]; then
+    [[ "$answer" =~ ^[oO]$ ]]
+  else
+    [[ "$answer" =~ ^[yY]$ ]]
+  fi
+}
+
+### HOMEBREW
 if ! command -v brew &>/dev/null; then
   echo "$LANG_MSG_INSTALLING Homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  
-  # Configuration du PATH pour Homebrew
-  if [[ -f /opt/homebrew/bin/brew ]]; then
-    # Pour Apple Silicon (M1/M2)
+  if [[ -x /opt/homebrew/bin/brew ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
-    echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$HOME/.zshrc"
-  elif [[ -f /usr/local/bin/brew ]]; then
-    # Pour Intel Mac
+  elif [[ -x /usr/local/bin/brew ]]; then
     eval "$(/usr/local/bin/brew shellenv)"
-    echo 'eval "$(/usr/local/bin/brew shellenv)"' >> "$HOME/.zshrc"
   fi
-  
   echo "✅ Homebrew $LANG_MSG_INSTALLED"
 fi
 
-### INSTALLATION DE iTerm2 SI ABSENT
+### iTerm2
 if [ ! -d "/Applications/iTerm.app" ]; then
-    echo "$LANG_MSG_INSTALLING iTerm2..."
-    brew install --cask iterm2
-    echo "✅ iTerm2 $LANG_MSG_INSTALLED"
-    
-    # Installation du thème Dracula
-    echo "$LANG_MSG_ITERM_THEME"
-    mkdir -p "$HOME/.iterm2/themes"
-    if curl -L "https://raw.githubusercontent.com/dracula/iterm/master/Dracula.itermcolors" -o "$HOME/.iterm2/themes/Dracula.itermcolors"; then
-      echo "$LANG_MSG_ITERM_THEME_SUCCESS"
-      echo -e "$LANG_MSG_ITERM_THEME_STEPS"
-    else
-      echo "⚠️ Erreur lors du téléchargement du thème Dracula"
-    fi
+  echo "$LANG_MSG_INSTALLING iTerm2..."
+  brew install --cask iterm2
+  echo "✅ iTerm2 $LANG_MSG_INSTALLED"
+
+  echo "$LANG_MSG_ITERM_THEME"
+  mkdir -p "$HOME/.iterm2/themes"
+  if curl -fsSL "https://raw.githubusercontent.com/dracula/iterm/master/Dracula.itermcolors" \
+       -o "$HOME/.iterm2/themes/Dracula.itermcolors"; then
+    echo "$LANG_MSG_ITERM_THEME_SUCCESS"
+    printf '%b\n' "$LANG_MSG_ITERM_THEME_STEPS"
+  else
+    echo "⚠️ Échec du téléchargement du thème Dracula"
+  fi
 fi
 
-### INSTALLATION DU PLUGIN AI ITERM2
+### iTerm2 AI Plugin
 if [ ! -d "/Applications/iTerm2 AI Plugin.app" ]; then
-    echo "$LANG_MSG_ITERM_AI_PROMPT"
-    read -r answer
-    if [[ "$LANG" == fr_* && "$answer" =~ ^[oO]$ ]] || [[ "$LANG" != fr_* && "$answer" =~ ^[yY]$ ]]; then
-        echo "$LANG_MSG_ITERM_AI_INSTALL"
-        # Création d'un dossier temporaire
-        tmp_dir=$(mktemp -d)
-        # Téléchargement et installation du plugin
-        curl -L "https://iterm2.com/downloads/ai/iTerm2%20AI%20Plugin.zip" -o "$tmp_dir/iterm2_ai_plugin.zip"
-        unzip -q "$tmp_dir/iterm2_ai_plugin.zip" -d "/Applications/"
-        # Nettoyage
-        rm -rf "$tmp_dir"
-        echo "$LANG_MSG_ITERM_AI_SUCCESS"
-        echo "$LANG_MSG_ITERM_AI"
-        echo -e "$LANG_MSG_ITERM_AI_STEPS"
+  if confirm "$LANG_MSG_ITERM_AI_PROMPT"; then
+    echo "$LANG_MSG_ITERM_AI_INSTALL"
+    tmp_dir=$(mktemp -d)
+    trap 'rm -rf "$tmp_dir"' EXIT
+    if curl -fsSL "https://iterm2.com/downloads/ai/iTerm2%20AI%20Plugin.zip" \
+         -o "$tmp_dir/iterm2_ai_plugin.zip" \
+       && unzip -q "$tmp_dir/iterm2_ai_plugin.zip" -d "/Applications/"; then
+      echo "$LANG_MSG_ITERM_AI_SUCCESS"
+      echo "$LANG_MSG_ITERM_AI"
+      printf '%b\n' "$LANG_MSG_ITERM_AI_STEPS"
     else
-        echo "$LANG_MSG_ITERM_AI_CANCEL"
+      echo "⚠️ Échec de l'installation du plugin AI iTerm2"
     fi
+    trap - EXIT
+    rm -rf "$tmp_dir"
+  else
+    echo "$LANG_MSG_ITERM_AI_CANCEL"
+  fi
 fi
 
-### TOUT LE RESTE NE S'EXECUTE QUE SI ON EST DANS ITERM2
+### The rest only runs inside iTerm2
 if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
 
-  ### INSTALLATION OH MY ZSH
+  ### OH MY ZSH
   if [ ! -d "$HOME/.oh-my-zsh" ]; then
     echo "$LANG_MSG_INSTALLING Oh My Zsh..."
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
     echo "✅ Oh My Zsh $LANG_MSG_INSTALLED"
   fi
 
-  # Installation des plugins Oh My Zsh
   ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
-  
-  # zsh-autosuggestions
-  if [ ! -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ]; then
-    echo "$LANG_MSG_INSTALLING zsh-autosuggestions..."
-    if git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"; then
-      echo "✅ zsh-autosuggestions $LANG_MSG_INSTALLED"
-    else
-      echo "⚠️ Erreur lors de l'installation de zsh-autosuggestions"
-    fi
-  fi
 
-  # zsh-syntax-highlighting
-  if [ ! -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ]; then
-    echo "$LANG_MSG_INSTALLING zsh-syntax-highlighting..."
-    if git clone https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"; then
-      echo "✅ zsh-syntax-highlighting $LANG_MSG_INSTALLED"
-    else
-      echo "⚠️ Erreur lors de l'installation de zsh-syntax-highlighting"
+  for plugin in zsh-autosuggestions zsh-syntax-highlighting zsh-completions; do
+    if [ ! -d "$ZSH_CUSTOM/plugins/$plugin" ]; then
+      echo "$LANG_MSG_INSTALLING $plugin..."
+      if git clone "https://github.com/zsh-users/$plugin" "$ZSH_CUSTOM/plugins/$plugin"; then
+        echo "✅ $plugin $LANG_MSG_INSTALLED"
+      else
+        echo "⚠️ Échec de l'installation de $plugin"
+      fi
     fi
-  fi
+  done
 
-  # zsh-completions
-  if [ ! -d "$ZSH_CUSTOM/plugins/zsh-completions" ]; then
-    echo "$LANG_MSG_INSTALLING zsh-completions..."
-    if git clone https://github.com/zsh-users/zsh-completions "$ZSH_CUSTOM/plugins/zsh-completions"; then
-      echo "✅ zsh-completions $LANG_MSG_INSTALLED"
-    else
-      echo "⚠️ Erreur lors de l'installation de zsh-completions"
-    fi
-  fi
-
-  # Création/Sauvegarde du .zshrc
   backup_zshrc
 
-  ### INSTALLATION POWERLEVEL10K
+  ### POWERLEVEL10K
   if ! brew list powerlevel10k &>/dev/null; then
     echo "$LANG_MSG_INSTALLING Powerlevel10k..."
     brew install powerlevel10k
     echo "✅ Powerlevel10k $LANG_MSG_INSTALLED"
   fi
 
-  # Configuration de base Oh My Zsh et Powerlevel10k
+  P10K_PATH="$(brew --prefix)/share/powerlevel10k/powerlevel10k.zsh-theme"
+  if [ -f "$P10K_PATH" ]; then
+    mkdir -p "$ZSH_CUSTOM/themes/powerlevel10k"
+    ln -sf "$P10K_PATH" "$ZSH_CUSTOM/themes/powerlevel10k/powerlevel10k.zsh-theme"
+    ZSH_THEME_LINE='ZSH_THEME="powerlevel10k/powerlevel10k"'
+  else
+    echo "$LANG_MSG_POWERLEVEL_ERROR"
+    ZSH_THEME_LINE='ZSH_THEME="robbyrussell"'
+  fi
+
   {
-    # Configuration de base
     echo 'export ZSH="$HOME/.oh-my-zsh"'
-    
-    # Homebrew PATH (doit être avant tout le reste)
-    echo '# Homebrew PATH configuration'
+    echo '# Homebrew PATH'
     echo 'if [[ -x /opt/homebrew/bin/brew ]]; then'
     echo '  eval "$(/opt/homebrew/bin/brew shellenv)"'
     echo 'elif [[ -x /usr/local/bin/brew ]]; then'
     echo '  eval "$(/usr/local/bin/brew shellenv)"'
     echo 'fi'
-
-    # Configuration Powerlevel10k
-    P10K_PATH="$(brew --prefix)/share/powerlevel10k/powerlevel10k.zsh-theme"
-    if [ -f "$P10K_PATH" ]; then
-      # Création du lien symbolique pour le thème dans Oh My Zsh
-      mkdir -p "$ZSH_CUSTOM/themes/powerlevel10k"
-      ln -sf "$P10K_PATH" "$ZSH_CUSTOM/themes/powerlevel10k/powerlevel10k.zsh-theme"
-      echo 'ZSH_THEME="powerlevel10k/powerlevel10k"'
-      echo 'alias p10k="$(brew --prefix)/share/powerlevel10k/powerlevel10k"'
-    else
-      echo "$LANG_MSG_POWERLEVEL_ERROR"
-      echo 'ZSH_THEME="robbyrussell"'  # Thème par défaut si powerlevel10k n'est pas trouvé
-    fi
-    
-    # Oh My Zsh plugins
+    echo "$ZSH_THEME_LINE"
     echo 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting zsh-completions)'
-    
-    # Source Oh My Zsh
     echo 'source $ZSH/oh-my-zsh.sh'
-    
-    # Activation des completions
     echo 'autoload -U compinit && compinit'
-
-    # Configurations des outils
-    echo '# Tool configurations'
-    echo 'if (( $+commands[atuin] )); then'
-    echo '  eval "$(atuin init zsh)"'
-    echo 'fi'
-
-    echo 'if (( $+commands[direnv] )); then'
-    echo '  eval "$(direnv hook zsh)"'
-    echo 'fi'
-
+    echo '(( $+commands[atuin] )) && eval "$(atuin init zsh)"'
+    echo '(( $+commands[direnv] )) && eval "$(direnv hook zsh)"'
     echo 'if (( $+commands[gpgconf] )); then'
     echo '  export GPG_TTY="$(tty)"'
     echo '  export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"'
     echo '  gpgconf --launch gpg-agent 2>/dev/null'
     echo 'fi'
-
-    # Alias eza
     echo 'if (( $+commands[eza] )); then'
     echo '  alias ls="eza -a --icons"'
     echo '  alias ll="eza -1a --icons"'
@@ -247,75 +208,68 @@ if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
 
   echo "$LANG_MSG_POWERLEVEL_CONFIG"
 
-  ### INSTALLATION ATUIN
-  echo "🔄 Installation d'Atuin..."
-  if install_if_missing atuin; then
-    if [[ $- == *i* ]]; then
-      eval "$(atuin init zsh)"
-    fi
-  fi
+  ### ATUIN
+  install_if_missing atuin
 
-  ### INSTALLATION DE PINENTRY-MAC & GNUPG
+  ### CRYPTO TOOLS
   echo "🔄 Installation des outils de cryptographie..."
   for pkg in pinentry-mac gnupg; do
     install_if_missing "$pkg"
   done
   echo "✅ Installation des outils de cryptographie terminée"
 
-  ### CONFIGURATION GPG-AGENT POUR YUBIKEY
+  ### GPG-AGENT FOR YUBIKEY
   echo "🔐 Configuration de GPG-agent pour YubiKey..."
-  mkdir -p ~/.gnupg
-  chmod 700 ~/.gnupg
+  mkdir -p "$HOME/.gnupg"
+  chmod 700 "$HOME/.gnupg"
 
-  # Déployer la configuration gpg-agent pour macOS
   SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
   if [ -f "$SCRIPT_DIR/config/gpg-agent.conf" ]; then
-    cp "$SCRIPT_DIR/config/gpg-agent.conf" ~/.gnupg/gpg-agent.conf
-    chmod 600 ~/.gnupg/gpg-agent.conf
+    cp "$SCRIPT_DIR/config/gpg-agent.conf" "$HOME/.gnupg/gpg-agent.conf"
+    chmod 600 "$HOME/.gnupg/gpg-agent.conf"
     echo "✅ Configuration GPG-agent déployée"
-    
-    # Redémarrer gpg-agent pour appliquer la config
     gpgconf --kill gpg-agent 2>/dev/null || true
     gpgconf --launch gpg-agent 2>/dev/null || true
   else
-    echo "⚠️ Fichier de configuration gpg-agent.conf non trouvé"
+    echo "⚠️ Fichier config/gpg-agent.conf introuvable"
   fi
 
-  ### INSTALLATION EZA
-  echo "🔄 Installation d'Eza..."
+  ### EZA
   install_if_missing eza
-  echo "✅ Configuration d'Eza terminée"
 
-  ### INSTALLATION DE PYTHON-DEV-TOOLKIT
-  if ! pip3 show devtools-claravnk &>/dev/null; then
+  ### PYTHON DEV TOOLKIT
+  if ! pip3 show devtools-claravnk &>/dev/null 2>&1; then
     echo "🔧 Installation de python-dev-toolkit..."
     if pip3 install --break-system-packages devtools-claravnk[dev]; then
       echo "✅ python-dev-toolkit installé avec succès (black, isort, flake8, bandit)"
     else
-      echo "⚠️ Erreur lors de l'installation de python-dev-toolkit"
+      echo "⚠️ Échec de l'installation de python-dev-toolkit"
     fi
   else
-    echo "✅ python-dev-toolkit déjà installé"
+    echo "✅ python-dev-toolkit $LANG_MSG_ALREADY_INSTALLED"
   fi
 
-  ### INSTALLATION DU SCRIPT D'ALIAS POUR PYTHON PACKAGE
-  echo "$LANG_MSG_PUBLISH_INSTALL"
-  read -r answer
-  if [[ "$LANG" == fr_* && "$answer" =~ ^[oO]$ ]] || [[ "$LANG" != fr_* && "$answer" =~ ^[yY]$ ]]; then
+  ### PUBLISH_PY ALIAS
+  if confirm "$LANG_MSG_PUBLISH_INSTALL"; then
     echo "$LANG_MSG_INSTALLING publish_py..."
     tmpfile=$(mktemp)
-    curl -L -o "$tmpfile" https://raw.githubusercontent.com/ClaraVnk/python-package/main/install_publish_alias.sh
-    chmod +x "$tmpfile"
-    "$tmpfile"
+    trap 'rm -f "$tmpfile"' EXIT
+    if curl -fsSL -o "$tmpfile" \
+         https://raw.githubusercontent.com/ClaraVnk/python-package/main/install_publish_alias.sh; then
+      chmod +x "$tmpfile"
+      "$tmpfile"
+      echo "✅ publishpy $LANG_MSG_INSTALLED"
+    else
+      echo "⚠️ Échec du téléchargement de publish_py"
+    fi
+    trap - EXIT
     rm -f "$tmpfile"
-    echo "✅ publishpy $LANG_MSG_INSTALLED"
   else
     echo "$LANG_MSG_PUBLISH_CANCEL"
   fi
 
   echo "$LANG_MSG_SETUP_COMPLETE"
-  
-  # Ajout des messages pour le rechargement
+
   if [[ "$LANG" == fr_* ]]; then
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
